@@ -1,0 +1,651 @@
+// ═══════════════════════════════════════════════════════════════════════════════
+// KEMIX Academy — Prisma Schema (Core LMS Backend)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// SystemHealthCheck serves exclusively as a foundational verification model.
+model SystemHealthCheck {
+  id        String   @id @default(uuid())
+  service   String   @default("kemix-academy-core")
+  status    String   @default("HEALTHY")
+  checkedAt DateTime @default(now())
+
+  @@map("system_health_checks")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Core User roles supported across KEMIX Academy
+enum Role {
+  ADMIN
+  INSTRUCTOR
+  STUDENT
+}
+
+/// Account lifecycle and moderation statuses
+enum UserStatus {
+  ACTIVE
+  SUSPENDED
+  DISABLED
+}
+
+/// Supported course difficulty levels
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  ALL_LEVELS
+}
+
+/// Course publication statuses
+enum CourseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Lesson content type classification
+enum LessonType {
+  VIDEO
+  TEXT
+  FILE
+  QUIZ
+}
+
+/// Video source classification
+enum VideoSource {
+  UPLOAD
+  YOUTUBE
+  GOOGLE_DRIVE
+  ONEDRIVE
+  SHAREPOINT
+  EXTERNAL_URL
+}
+
+/// Progression unlock rules
+enum UnlockRule {
+  IMMEDIATE
+  PREVIOUS_LESSON
+  TASK_SUBMISSION
+  QUIZ_PASS
+}
+
+/// Enrollment lifecycle statuses
+enum EnrollmentStatus {
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+/// Supported enrollment models
+enum EnrollmentType {
+  FREE_ENROLLMENT
+  ADMIN_ASSIGNED
+  PURCHASED
+}
+
+/// Storage file categories
+enum FileCategory {
+  COURSE_COVER
+  VIDEO
+  PDF
+  DOCUMENT
+  IMAGE
+  OTHER
+}
+
+/// Storage visibility classification
+enum FileVisibility {
+  PUBLIC
+  PROTECTED
+}
+
+/// Quiz question types
+enum QuestionType {
+  MULTIPLE_CHOICE
+  SINGLE_CHOICE
+  TRUE_FALSE
+}
+
+/// Quiz attempt evaluation statuses
+enum QuizAttemptStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+  ABANDONED
+}
+
+/// Task submission review statuses
+enum TaskSubmissionStatus {
+  SUBMITTED
+  LATE
+  REVIEWED
+  REJECTED
+}
+
+/// WhatsApp payment / enrollment request statuses
+enum PaymentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Identity & Auth
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Core User entity for identity, authentication, and RBAC
+model User {
+  id                String           @id @default(uuid())
+  email             String           @unique
+  passwordHash      String
+  fullName          String
+  avatarUrl         String?
+  bio               String?
+  role              Role             @default(STUDENT)
+  status            UserStatus       @default(ACTIVE)
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  sessions          Session[]
+  instructedCourses Course[]         @relation("InstructorCourses")
+  enrollments       Enrollment[]
+  lessonProgress    LessonProgress[]
+  quizAttempts      QuizAttempt[]
+  certificates      Certificate[]
+  uploadedFiles     FileAsset[]
+  taskSubmissions   TaskSubmission[]
+  reviewedTasks     TaskSubmission[] @relation("TaskReviewer")
+  paymentRequests   PaymentRequest[] @relation("UserPaymentRequests")
+  reviewedPayments  PaymentRequest[] @relation("PaymentReviewer")
+  auditLogs         AuditLog[]       @relation("ActorAuditLogs")
+
+  @@index([role])
+  @@index([status])
+  @@map("users")
+}
+
+/// Active and historical user authentication sessions
+model Session {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  revokedAt DateTime?
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([tokenHash])
+  @@map("sessions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Course & Curriculum
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Primary course entity
+model Course {
+  id               String           @id @default(uuid())
+  title            String
+  slug             String           @unique
+  shortDescription String?
+  description      String           @db.Text
+  coverImageUrl    String?
+  status           CourseStatus     @default(DRAFT)
+  level            CourseLevel      @default(ALL_LEVELS)
+  price            Float            @default(0)
+  currency         String           @default("EGP")
+  isFree           Boolean          @default(true)
+  certificatesEnabled Boolean        @default(false)
+  tools            String[]         @default([])
+  requirements     String?          @db.Text
+  whatYouWillLearn String[]         @default([])
+  sortOrder        Int              @default(0)
+  isArchived       Boolean          @default(false)
+  instructorId     String
+  durationSeconds  Int              @default(0)
+  publishedAt      DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  instructor       User             @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Restrict)
+  sections         CourseSection[]
+  enrollments      Enrollment[]
+  lessonProgress   LessonProgress[]
+  quizzes          Quiz[]
+  tasks            Task[]
+  certificates     Certificate[]
+  files            FileAsset[]
+  paymentRequests  PaymentRequest[]
+
+  @@index([instructorId])
+  @@index([status])
+  @@index([slug])
+  @@map("courses")
+}
+
+/// Ordered logical module/section within a course (displayed as "Week / الأسبوع")
+model CourseSection {
+  id          String   @id @default(uuid())
+  courseId    String
+  title       String
+  description String?  @db.Text
+  sortOrder   Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons     Lesson[]
+
+  @@index([courseId, sortOrder])
+  @@map("course_sections")
+}
+
+/// Individual learning unit within a section
+model Lesson {
+  id              String           @id @default(uuid())
+  sectionId       String
+  title           String
+  slug            String
+  description     String?          @db.Text
+  lessonType      LessonType       @default(VIDEO)
+  videoSource     VideoSource      @default(UPLOAD)
+  videoProvider   String?
+  videoUrl        String?
+  unlockRule      UnlockRule       @default(IMMEDIATE)
+  content         String?          @db.Text
+  storageKey      String?
+  sortOrder       Int              @default(0)
+  isPublished     Boolean          @default(false)
+  isFreePreview   Boolean          @default(false)
+  isArchived      Boolean          @default(false)
+  durationSeconds Int              @default(0)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  section         CourseSection    @relation(fields: [sectionId], references: [id], onDelete: Cascade)
+  progress        LessonProgress[]
+  files           FileAsset[]
+  quizzes         Quiz[]
+  tasks           Task[]
+
+  @@unique([sectionId, slug])
+  @@index([sectionId, sortOrder])
+  @@index([isPublished])
+  @@map("lessons")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: File & Media Metadata
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Tracked file and media assets stored in object storage
+model FileAsset {
+  id           String         @id @default(uuid())
+  storageKey   String         @unique
+  originalName String
+  mimeType     String
+  size         Int
+  category     FileCategory   @default(OTHER)
+  visibility   FileVisibility @default(PROTECTED)
+  uploadedById String
+  courseId     String?
+  lessonId     String?
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  uploadedBy   User           @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  course       Course?        @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  lesson       Lesson?        @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+
+  @@index([uploadedById])
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("file_assets")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Enrollment & Progress
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Student course enrollment record
+model Enrollment {
+  id             String           @id @default(uuid())
+  userId         String
+  courseId       String
+  status         EnrollmentStatus @default(ACTIVE)
+  enrollmentType EnrollmentType   @default(FREE_ENROLLMENT)
+  enrolledAt     DateTime         @default(now())
+  completedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course         Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+  @@map("enrollments")
+}
+
+/// Granular lesson completion and playback progress tracking
+model LessonProgress {
+  id                  String    @id @default(uuid())
+  userId              String
+  lessonId            String
+  courseId            String
+  completed           Boolean   @default(false)
+  progressPercent     Int       @default(0)
+  lastPositionSeconds Int       @default(0)
+  isManuallyUnlocked  Boolean   @default(false)
+  unlockedAt          DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  user                User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson              Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  course              Course    @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@index([userId, courseId])
+  @@index([lessonId])
+  @@map("lesson_progress")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Assessment & Quizzes
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Course and lesson assessment quiz
+model Quiz {
+  id                     String          @id @default(uuid())
+  courseId               String
+  lessonId               String?
+  title                  String
+  description            String?         @db.Text
+  passingScore           Int             @default(70)
+  timeLimitMinutes       Int?
+  maxAttempts            Int             @default(0)
+  randomizeQuestions     Boolean         @default(false)
+  randomizeAnswers       Boolean         @default(false)
+  showResultImmediately Boolean         @default(true)
+  showCorrectAnswers     Boolean         @default(true)
+  allowReview            Boolean         @default(true)
+  isPublished            Boolean         @default(false)
+  isArchived             Boolean         @default(false)
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+
+  course                 Course          @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson                 Lesson?         @relation(fields: [lessonId], references: [id], onDelete: SetNull)
+  questions              QuizQuestion[]
+  attempts               QuizAttempt[]
+
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("quizzes")
+}
+
+/// Question item in a quiz
+model QuizQuestion {
+  id           String        @id @default(uuid())
+  quizId       String
+  prompt       String        @db.Text
+  questionType QuestionType  @default(SINGLE_CHOICE)
+  sortOrder    Int           @default(0)
+  points       Int           @default(1)
+  explanation  String?       @db.Text
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  quiz         Quiz          @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  options      QuizOption[]
+  answers      QuizAnswer[]
+
+  @@index([quizId, sortOrder])
+  @@map("quiz_questions")
+}
+
+/// Possible answer choice for a quiz question
+model QuizOption {
+  id          String       @id @default(uuid())
+  questionId  String
+  text        String       @db.Text
+  isCorrect   Boolean      @default(false)
+  sortOrder   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  question    QuizQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers     QuizAnswer[]
+
+  @@index([questionId, sortOrder])
+  @@map("quiz_options")
+}
+
+/// Individual user quiz attempt record
+model QuizAttempt {
+  id               String            @id @default(uuid())
+  quizId           String
+  userId           String
+  status           QuizAttemptStatus @default(IN_PROGRESS)
+  score            Float?
+  passed           Boolean           @default(false)
+  attemptNumber    Int               @default(1)
+  timeSpentSeconds Int?
+  startedAt        DateTime          @default(now())
+  expiresAt        DateTime?
+  submittedAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  quiz             Quiz              @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers          QuizAnswer[]
+
+  @@index([quizId])
+  @@index([userId])
+  @@map("quiz_attempts")
+}
+
+/// User's response to an individual quiz question in an attempt
+model QuizAnswer {
+  id               String        @id @default(uuid())
+  attemptId        String
+  questionId       String
+  selectedOptionId String?
+  isCorrect        Boolean       @default(false)
+  pointsAwarded    Int           @default(0)
+  createdAt        DateTime      @default(now())
+
+  attempt          QuizAttempt   @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question         QuizQuestion  @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  selectedOption   QuizOption?   @relation(fields: [selectedOptionId], references: [id], onDelete: SetNull)
+
+  @@unique([attemptId, questionId])
+  @@index([attemptId])
+  @@map("quiz_answers")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Tasks & Assignments
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Educational task/assignment assigned within a lesson
+model Task {
+  id               String           @id @default(uuid())
+  courseId         String
+  lessonId         String
+  title            String
+  description      String           @db.Text
+  deadline         DateTime?
+  maxFileSizeMb    Int              @default(50)
+  allowedFileTypes String           @default("pdf,zip,doc,docx,xlsx,xls,csv,png,jpg,jpeg")
+  maxAttempts      Int              @default(1)
+  isPublished      Boolean          @default(false)
+  isArchived       Boolean          @default(false)
+  sortOrder        Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lesson           Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  submissions      TaskSubmission[]
+
+  @@index([courseId])
+  @@index([lessonId])
+  @@map("tasks")
+}
+
+/// Student submission for a task
+model TaskSubmission {
+  id            String               @id @default(uuid())
+  taskId        String
+  userId        String
+  attemptNumber Int                  @default(1)
+  fileUrl       String?
+  fileName      String?
+  fileSize      Int?
+  textResponse  String?              @db.Text
+  status        TaskSubmissionStatus @default(SUBMITTED)
+  score         Float?
+  feedback      String?              @db.Text
+  reviewerId    String?
+  submittedAt   DateTime             @default(now())
+  reviewedAt    DateTime?
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+
+  task          Task                 @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewer      User?                @relation("TaskReviewer", fields: [reviewerId], references: [id], onDelete: SetNull)
+
+  @@index([taskId])
+  @@index([userId])
+  @@index([reviewerId])
+  @@map("task_submissions")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Payments & WhatsApp Enrollment Requests
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// WhatsApp course enrollment & payment intent request
+model PaymentRequest {
+  id              String               @id @default(uuid())
+  userId          String
+  courseId        String
+  amount          Float
+  currency        String               @default("EGP")
+  status          PaymentRequestStatus @default(PENDING)
+  studentName     String
+  studentEmail    String
+  studentPhone    String?
+  notes           String?              @db.Text
+  reviewedById    String?
+  reviewedAt      DateTime?
+  rejectionReason String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  user            User                 @relation("UserPaymentRequests", fields: [userId], references: [id], onDelete: Cascade)
+  course          Course               @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  reviewedBy      User?                @relation("PaymentReviewer", fields: [reviewedById], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([status])
+  @@map("payment_requests")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Audit Logging & Platform Governance
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Comprehensive audit log for administrative and instructor actions
+model AuditLog {
+  id         String   @id @default(uuid())
+  actorId    String?
+  actorEmail String?
+  actorName  String?
+  action     String
+  entity     String
+  entityId   String?
+  details    Json?
+  reason     String?  @db.Text
+  createdAt  DateTime @default(now())
+
+  actor      User?    @relation("ActorAuditLogs", fields: [actorId], references: [id], onDelete: SetNull)
+
+  @@index([actorId])
+  @@index([action])
+  @@index([entity])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Global platform settings & WhatsApp integration parameters
+model PlatformSettings {
+  id                String   @id @default("global")
+  siteName          String   @default("KEMIX Academy")
+  siteDescription   String?  @db.Text
+  supportEmail      String?
+  logoUrl           String?
+  footerLogoUrl     String?
+  faviconUrl        String?
+  footerText        String?  @db.Text
+  aboutText         String?  @db.Text
+  contactText       String?  @db.Text
+  cms               Json?
+  whatsappNumber    String   @default("+201000000000")
+  whatsappTemplate  String   @default("مرحبًا KEMIX Academy، أرغب في الاشتراك في كورس {course_name}.\nالسعر: {price} {currency}\nاسم الطالب: {student_name}\nالبريد الإلكتروني: {student_email}")
+  defaultCurrency   String   @default("EGP")
+  allowRegistration Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+
+  @@map("platform_settings")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Models: Certificates
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Course completion credential
+model Certificate {
+  id                String   @id @default(uuid())
+  certificateCode   String   @unique
+  userId            String
+  courseId          String
+  issuedAt          DateTime @default(now())
+  verificationToken String   @unique
+  metadata          Json?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course            Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, courseId])
+  @@index([userId])
+  @@index([courseId])
+  @@index([certificateCode])
+  @@index([verificationToken])
+  @@map("certificates")
+}

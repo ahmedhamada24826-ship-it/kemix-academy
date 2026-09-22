@@ -1,0 +1,45 @@
+services:
+  # ── Relational Database: PostgreSQL 16+ ──
+  postgres:
+    image: postgres:16-alpine
+    container_name: kemix-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-kemix_academy_dev}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - kemix_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-kemix_academy_dev}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Object Storage (S3-Compatible API — MinIO for local development) ──
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: kemix-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${S3_ACCESS_KEY_ID:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${S3_SECRET_ACCESS_KEY:-minioadmin}
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - kemix_miniodata:/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:9000/minio/health/live || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  kemix_pgdata:
+    name: kemix_pgdata
+  kemix_miniodata:
+    name: kemix_miniodata
