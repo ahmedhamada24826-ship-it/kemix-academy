@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Input } from "@/components/ui/input";
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle } from "@/components/ui/card";
+import { FileDropzone } from "@/components/upload/file-dropzone";
+import type { UploadedAsset } from "@/components/upload/use-uploader";
 import {
   HardDrive,
   UploadCloud,
@@ -12,37 +13,69 @@ import {
   FileSpreadsheet,
   Film,
   CheckCircle2,
-  ExternalLink,
   Copy,
-  Search,
+  Trash2,
 } from "lucide-react";
+
+interface MediaFile {
+  id: string;
+  originalName: string;
+  mimeType: string;
+  size: number;
+  category: string;
+  visibility: "PUBLIC" | "PROTECTED";
+  createdAt: string;
+  publicUrl?: string;
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const unitIndex = Math.min(units.length - 1, Math.floor(Math.log(bytes) / Math.log(1024)));
+  return `${(bytes / Math.pow(1024, unitIndex)).toFixed(unitIndex === 0 ? 0 : 2)} ${units[unitIndex]}`;
+}
 
 export default function AdminMediaPage() {
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null);
+  const [files, setFiles] = useState<MediaFile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const sampleMedia = [
-    {
-      name: "financial_dataset_2026.parquet",
-      type: "DATASET",
-      size: "14.2 MB",
-      uploadedAt: "2026-09-18",
-      url: "https://storage.kemix.academy/datasets/financial_dataset_2026.parquet",
-    },
-    {
-      name: "sales_forecasting_model.ipynb",
-      type: "NOTEBOOK",
-      size: "2.8 MB",
-      uploadedAt: "2026-09-15",
-      url: "https://storage.kemix.academy/notebooks/sales_forecasting_model.ipynb",
-    },
-    {
-      name: "intro_to_deep_learning_slides.pdf",
-      type: "DOCUMENT",
-      size: "8.4 MB",
-      uploadedAt: "2026-09-10",
-      url: "https://storage.kemix.academy/slides/intro_to_deep_learning_slides.pdf",
-    },
-  ];
+  const loadFiles = useCallback(async () => {
+    try {
+      const response = await fetch("/api/files");
+      const json = await response.json().catch(() => null);
+      if (!response.ok || !json?.success) {
+        throw new Error(json?.error?.message || "تعذر تحميل الملفات");
+      }
+      setFiles(json.data?.files || []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "تعذر تحميل الملفات");
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadFiles();
+  }, [loadFiles]);
+
+  const handleUploaded = async (_asset: UploadedAsset) => {
+    await loadFiles();
+  };
+
+  const handleDelete = async (file: MediaFile) => {
+    if (!window.confirm(`هل أنت متأكد من حذف الملف "${file.originalName}"؟`)) return;
+
+    const response = await fetch(`/api/files/${file.id}/access`, { method: "DELETE" });
+    const json = await response.json().catch(() => null);
+    if (!response.ok || !json?.success) {
+      setError(json?.error?.message || "تعذر حذف الملف");
+      return;
+    }
+    await loadFiles();
+  };
 
   const handleCopy = (url: string) => {
     navigator.clipboard.writeText(url);
@@ -64,21 +97,36 @@ export default function AdminMediaPage() {
       </div>
 
       {/* Upload Box */}
-      <Card className="bg-white border-2 border-dashed border-blue-200 shadow-sm p-8 text-center space-y-4">
-        <div className="h-14 w-14 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center mx-auto">
-          <UploadCloud className="h-7 w-7" />
+      <Card className="bg-white border border-blue-200 shadow-sm p-6 space-y-5">
+        <div className="flex items-center gap-3">
+          <div className="h-11 w-11 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
+            <UploadCloud className="h-6 w-6" />
+          </div>
+          <div>
+            <h2 className="text-base font-bold text-slate-900">رفع صورة أو ملف</h2>
+            <p className="text-xs text-slate-500">يتم رفع الملف مباشرة إلى التخزين ثم تسجيله في قاعدة البيانات.</p>
+          </div>
         </div>
-        <div className="space-y-1">
-          <h2 className="text-base font-bold text-slate-900">
-            اسحب الملفات هنا أو اضغط للاستعراض
-          </h2>
-          <p className="text-xs text-slate-500">
-            يدعم ملفات البيانات (CSV, JSON, Parquet, SQLite) والدفاتر (IPYNB, PDF, ZIP) حتى 200 ميجابايت.
-          </p>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <FileDropzone
+            category="IMAGE"
+            visibility="PUBLIC"
+            maxSizeMb={10}
+            accept={["image/*"]}
+            label="رفع صورة"
+            hint="PNG, JPG, WebP أو SVG حتى 10MB"
+            onUploaded={handleUploaded}
+          />
+          <FileDropzone
+            category="OTHER"
+            visibility="PROTECTED"
+            maxSizeMb={200}
+            label="رفع ملف"
+            hint="ملفات الدروس والبيانات حتى 200MB"
+            onUploaded={handleUploaded}
+          />
         </div>
-        <Button className="bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-bold h-9">
-          اختيار ملف من الجهاز
-        </Button>
+        {error && <p className="text-xs text-red-700 bg-red-50 border border-red-200 rounded-lg p-3">{error}</p>}
       </Card>
 
       {/* Media Files Table */}
@@ -101,45 +149,52 @@ export default function AdminMediaPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {sampleMedia.map((file, idx) => (
-                <tr key={idx} className="hover:bg-slate-50/80 transition-colors">
+              {isLoading ? (
+                <tr><td colSpan={5} className="p-8 text-center text-slate-500">جاري تحميل الملفات...</td></tr>
+              ) : files.length === 0 ? (
+                <tr><td colSpan={5} className="p-8 text-center text-slate-500">لا توجد ملفات مرفوعة بعد.</td></tr>
+              ) : files.map((file) => (
+                <tr key={file.id} className="hover:bg-slate-50/80 transition-colors">
                   <td className="p-4">
                     <div className="flex items-center gap-2.5">
                       <div className="h-8 w-8 rounded-lg bg-slate-100 text-slate-700 flex items-center justify-center flex-shrink-0">
-                        {file.type === "DATASET" ? (
+                        {file.category === "IMAGE" ? (
+                          <UploadCloud className="h-4 w-4 text-blue-600" />
+                        ) : file.mimeType.includes("spreadsheet") || file.mimeType.includes("csv") ? (
                           <FileSpreadsheet className="h-4 w-4 text-emerald-600" />
-                        ) : file.type === "NOTEBOOK" ? (
+                        ) : file.mimeType.includes("notebook") ? (
                           <FileCode className="h-4 w-4 text-amber-600" />
                         ) : (
                           <Film className="h-4 w-4 text-blue-600" />
                         )}
                       </div>
-                      <span className="font-bold text-slate-900 font-mono text-xs">{file.name}</span>
+                      <span className="font-bold text-slate-900 font-mono text-xs">{file.originalName}</span>
                     </div>
                   </td>
 
                   <td className="p-4">
                     <Badge variant="outline" className="text-[10px] font-mono">
-                      {file.type}
+                      {file.category}
                     </Badge>
                   </td>
 
                   <td className="p-4 font-mono text-xs text-slate-600">
-                    {file.size}
+                    {formatBytes(file.size)}
                   </td>
 
                   <td className="p-4 text-slate-500 text-xs font-mono">
-                    {file.uploadedAt}
+                    {new Date(file.createdAt).toLocaleDateString("ar-EG")}
                   </td>
 
                   <td className="p-4 text-left">
+                    <div className="flex items-center justify-end gap-1">
                     <Button
                       size="sm"
                       variant="ghost"
-                      onClick={() => handleCopy(file.url)}
+                      onClick={() => handleCopy(file.publicUrl || `/api/files/${file.id}/access?redirect=1`)}
                       className="h-7 px-2 text-xs text-blue-600 hover:text-blue-800"
                     >
-                      {copiedUrl === file.url ? (
+                      {copiedUrl === (file.publicUrl || `/api/files/${file.id}/access?redirect=1`) ? (
                         <span className="flex items-center gap-1 text-emerald-600 font-bold">
                           <CheckCircle2 className="h-3.5 w-3.5" />
                           <span>تم النسخ!</span>
@@ -151,6 +206,10 @@ export default function AdminMediaPage() {
                         </span>
                       )}
                     </Button>
+                    <Button size="sm" variant="ghost" onClick={() => handleDelete(file)} className="h-7 px-2 text-red-600 hover:text-red-800" title="حذف الملف">
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                    </div>
                   </td>
                 </tr>
               ))}

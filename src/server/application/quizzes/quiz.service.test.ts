@@ -16,6 +16,13 @@ describe("QuizService", () => {
     quizQuestion: {
       findFirst: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
+      findUnique: ReturnType<typeof vi.fn>;
+      update: ReturnType<typeof vi.fn>;
+      delete: ReturnType<typeof vi.fn>;
+    };
+    quizOption: {
+      deleteMany: ReturnType<typeof vi.fn>;
+      createMany: ReturnType<typeof vi.fn>;
     };
     quizAttempt: {
       findUnique: ReturnType<typeof vi.fn>;
@@ -72,6 +79,13 @@ describe("QuizService", () => {
       quizQuestion: {
         findFirst: vi.fn(),
         create: vi.fn(),
+        findUnique: vi.fn(),
+        update: vi.fn(),
+        delete: vi.fn(),
+      },
+      quizOption: {
+        deleteMany: vi.fn(),
+        createMany: vi.fn(),
       },
       quizAttempt: {
         findUnique: vi.fn(),
@@ -84,7 +98,14 @@ describe("QuizService", () => {
       quizAnswer: {
         upsert: vi.fn(),
       },
-      $transaction: vi.fn((promises: Promise<unknown>[]) => Promise.all(promises)),
+      $transaction: vi.fn((operation: Promise<unknown>[] | ((tx: unknown) => Promise<unknown>)) =>
+        typeof operation === "function"
+          ? operation({
+              quizQuestion: mockPrisma.quizQuestion,
+              quizOption: mockPrisma.quizOption,
+            })
+          : Promise.all(operation)
+      ),
     };
 
     mockAccessService = {
@@ -205,6 +226,45 @@ describe("QuizService", () => {
       expect(result.status).toBe("SUBMITTED");
       expect(result.score).toBe(100);
       expect(result.passed).toBe(true);
+    });
+  });
+
+  describe("question management", () => {
+    it("updates question text and replaces options", async () => {
+      mockPrisma.quizQuestion.findUnique
+        .mockResolvedValueOnce({
+          id: "q-1",
+          quiz: { course: { id: "course-1", instructorId: instructorUser.id } },
+        })
+        .mockResolvedValueOnce({
+          id: "q-1",
+          quizId: "quiz-1",
+          prompt: "Updated?",
+          points: 2,
+          options: [{ id: "opt-1", text: "Yes", isCorrect: true }],
+        });
+      mockPrisma.quizQuestion.update.mockResolvedValue({});
+
+      const updated = await quizService.updateQuestion("q-1", instructorUser, {
+        prompt: "Updated?",
+        points: 2,
+        options: [{ text: "Yes", isCorrect: true }],
+      });
+
+      expect(updated.prompt).toBe("Updated?");
+      expect(mockPrisma.quizOption.deleteMany).toHaveBeenCalledWith({ where: { questionId: "q-1" } });
+      expect(mockPrisma.quizOption.createMany).toHaveBeenCalled();
+    });
+
+    it("deletes a question for an authorized course manager", async () => {
+      mockPrisma.quizQuestion.findUnique.mockResolvedValue({
+        id: "q-1",
+        quiz: { course: { id: "course-1", instructorId: instructorUser.id } },
+      });
+
+      await quizService.deleteQuestion("q-1", instructorUser);
+
+      expect(mockPrisma.quizQuestion.delete).toHaveBeenCalledWith({ where: { id: "q-1" } });
     });
   });
 });

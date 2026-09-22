@@ -121,6 +121,20 @@ export interface CreateQuizQuestionInput {
   }[];
 }
 
+export interface UpdateQuizQuestionInput {
+  prompt?: string;
+  questionType?: QuestionType;
+  sortOrder?: number;
+  points?: number;
+  explanation?: string | null;
+  options?: {
+    id?: string;
+    text: string;
+    isCorrect: boolean;
+    sortOrder?: number;
+  }[];
+}
+
 export interface SubmitQuizAttemptInput {
   answers: {
     questionId: string;

@@ -7,6 +7,7 @@ import {
   CreateQuizInput,
   UpdateQuizInput,
   CreateQuizQuestionInput,
+  UpdateQuizQuestionInput,
   SubmitQuizAttemptInput,
   ManualOverrideInput,
 } from "@/server/domain/quizzes/quiz.types";
@@ -266,6 +267,69 @@ export class QuizService implements IQuizService {
       ...quiz,
       questions: sanitizedQuestions,
     };
+  }
+
+  async updateQuestion(
+    questionId: string,
+    user: AuthenticatedUser,
+    input: UpdateQuizQuestionInput
+  ): Promise<QuizQuestionDto> {
+    const question = await this.prisma.quizQuestion.findUnique({
+      where: { id: questionId },
+      include: { quiz: { include: { course: { select: { id: true, instructorId: true } } } } },
+    });
+
+    if (!question) throw new Error("Quiz question not found");
+    if (!this.accessService.canManageCourse(user, question.quiz.course)) {
+      throw new Error("Forbidden: You cannot modify this quiz question");
+    }
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      await tx.quizQuestion.update({
+        where: { id: questionId },
+        data: {
+          ...(input.prompt !== undefined && { prompt: input.prompt }),
+          ...(input.questionType !== undefined && { questionType: input.questionType }),
+          ...(input.sortOrder !== undefined && { sortOrder: input.sortOrder }),
+          ...(input.points !== undefined && { points: input.points }),
+          ...(input.explanation !== undefined && { explanation: input.explanation }),
+        },
+      });
+
+      if (input.options) {
+        await tx.quizOption.deleteMany({ where: { questionId } });
+        await tx.quizOption.createMany({
+          data: input.options.map((option, index) => ({
+            questionId,
+            text: option.text,
+            isCorrect: option.isCorrect,
+            sortOrder: option.sortOrder ?? index,
+          })),
+        });
+      }
+
+      return tx.quizQuestion.findUnique({
+        where: { id: questionId },
+        include: { options: { orderBy: { sortOrder: "asc" } } },
+      });
+    });
+
+    if (!updated) throw new Error("Quiz question not found");
+    return updated;
+  }
+
+  async deleteQuestion(questionId: string, user: AuthenticatedUser): Promise<void> {
+    const question = await this.prisma.quizQuestion.findUnique({
+      where: { id: questionId },
+      include: { quiz: { include: { course: { select: { id: true, instructorId: true } } } } },
+    });
+
+    if (!question) throw new Error("Quiz question not found");
+    if (!this.accessService.canManageCourse(user, question.quiz.course)) {
+      throw new Error("Forbidden: You cannot delete this quiz question");
+    }
+
+    await this.prisma.quizQuestion.delete({ where: { id: questionId } });
   }
 
   async listQuizzesByCourse(

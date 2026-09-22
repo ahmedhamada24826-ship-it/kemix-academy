@@ -4,6 +4,7 @@ import {
   PaymentRequestDto,
   CreatePaymentRequestInput,
   ReviewPaymentRequestInput,
+  UpdatePaymentRequestInput,
   PaymentRequestFilterParams,
 } from "@/server/domain/payments/payment.types";
 import { AuthenticatedUser } from "@/server/domain/auth/auth.types";
@@ -353,6 +354,36 @@ export class PaymentService implements IPaymentService {
           : { id: "", fullName: "", email: "" },
       };
     }
+  }
+
+  async updatePaymentRequest(
+    requestId: string,
+    user: AuthenticatedUser,
+    input: UpdatePaymentRequestInput
+  ): Promise<PaymentRequestDto> {
+    if (user.role !== "ADMIN") {
+      throw new Error("Forbidden: Only administrators can update payment requests");
+    }
+
+    const updatedRequest = await this.prisma.paymentRequest.update({
+      where: { id: requestId },
+      data: { studentPhone: input.studentPhone },
+      include: {
+        user: { select: { id: true, fullName: true, email: true } },
+        course: { select: { id: true, title: true, slug: true } },
+        reviewedBy: { select: { id: true, fullName: true } },
+      },
+    });
+
+    return {
+      ...updatedRequest,
+      student: {
+        id: updatedRequest.user?.id ?? updatedRequest.userId,
+        fullName: updatedRequest.user?.fullName ?? updatedRequest.studentName,
+        email: updatedRequest.user?.email ?? updatedRequest.studentEmail,
+        phone: updatedRequest.studentPhone,
+      },
+    };
   }
 }
 

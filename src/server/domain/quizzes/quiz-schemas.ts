@@ -80,6 +80,27 @@ export const CreateQuizQuestionSchema = z.object({
     }),
 });
 
+export const UpdateQuizQuestionSchema = z.object({
+  prompt: z.string().trim().min(3).optional(),
+  questionType: QuestionTypeEnum.optional(),
+  sortOrder: z.number().int().nonnegative().optional(),
+  points: z.number().int().positive().optional(),
+  explanation: z.string().trim().max(1000).optional().nullable(),
+  options: z
+    .array(
+      z.object({
+        text: z.string().trim().min(1),
+        isCorrect: z.boolean(),
+        sortOrder: z.number().int().nonnegative().optional(),
+      })
+    )
+    .min(2)
+    .refine((opts) => opts.some((option) => option.isCorrect), {
+      message: "At least one option must be marked as correct",
+    })
+    .optional(),
+});
+
 export const SubmitQuizAttemptSchema = z.object({
   answers: z.array(
     z.object({
@@ -107,6 +128,7 @@ export const ManualOverrideSchema = z.object({
 export type CreateQuizSchemaType = z.infer<typeof CreateQuizSchema>;
 export type UpdateQuizSchemaType = z.infer<typeof UpdateQuizSchema>;
 export type CreateQuizQuestionSchemaType = z.infer<typeof CreateQuizQuestionSchema>;
+export type UpdateQuizQuestionSchemaType = z.infer<typeof UpdateQuizQuestionSchema>;
 export type SubmitQuizAttemptSchemaType = z.infer<typeof SubmitQuizAttemptSchema>;
 export type ManualOverrideSchemaType = z.infer<typeof ManualOverrideSchema>;
 

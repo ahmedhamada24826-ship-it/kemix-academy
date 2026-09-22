@@ -2,6 +2,7 @@ import {
   PaymentRequestDto,
   CreatePaymentRequestInput,
   ReviewPaymentRequestInput,
+  UpdatePaymentRequestInput,
   PaymentRequestFilterParams,
 } from "@/server/domain/payments/payment.types";
 import { AuthenticatedUser } from "@/server/domain/auth/auth.types";
@@ -20,5 +21,10 @@ export interface IPaymentService {
     requestId: string,
     user: AuthenticatedUser,
     input: ReviewPaymentRequestInput
+  ): Promise<PaymentRequestDto>;
+  updatePaymentRequest(
+    requestId: string,
+    user: AuthenticatedUser,
+    input: UpdatePaymentRequestInput
   ): Promise<PaymentRequestDto>;
 }

@@ -8,6 +8,7 @@ import { PrismaClient } from "@prisma/client";
 describe("FileService", () => {
   let mockPrisma: {
     course: { findUnique: ReturnType<typeof vi.fn> };
+    lesson: { findUnique: ReturnType<typeof vi.fn> };
     fileAsset: {
       findUnique: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
@@ -53,6 +54,9 @@ describe("FileService", () => {
   beforeEach(() => {
     mockPrisma = {
       course: {
+        findUnique: vi.fn(),
+      },
+      lesson: {
         findUnique: vi.fn(),
       },
       fileAsset: {
@@ -141,6 +145,47 @@ describe("FileService", () => {
       const result = await fileService.getSignedAccessUrl("file-public-1", null);
       expect(result.isDirectPublic).toBe(true);
       expect(result.url).toBe("https://cdn.kemix.internal/covers/cover.png");
+    });
+  });
+
+  describe("registerFileAsset", () => {
+    it("does not create a database row when the object is missing", async () => {
+      mockStorage.checkObjectExists.mockResolvedValue(false);
+
+      await expect(
+        fileService.registerFileAsset(instructorUser, {
+          storageKey: "uploads/inst-1/missing.pdf",
+          originalName: "missing.pdf",
+          mimeType: "application/pdf",
+          size: 1024,
+          category: "PDF",
+          visibility: "PROTECTED",
+        })
+      ).rejects.toThrow("was not found in storage");
+
+      expect(mockPrisma.fileAsset.create).not.toHaveBeenCalled();
+    });
+
+    it("rejects a lesson attached to another course", async () => {
+      mockPrisma.lesson.findUnique.mockResolvedValue({
+        section: { courseId: "course-2" },
+      });
+
+      await expect(
+        fileService.registerFileAsset(instructorUser, {
+          storageKey: "uploads/inst-1/file.pdf",
+          originalName: "file.pdf",
+          mimeType: "application/pdf",
+          size: 1024,
+          category: "PDF",
+          visibility: "PROTECTED",
+          courseId: "course-1",
+          lessonId: "lesson-1",
+        })
+      ).rejects.toThrow("does not belong to the specified course");
+
+      expect(mockStorage.checkObjectExists).not.toHaveBeenCalled();
+      expect(mockPrisma.fileAsset.create).not.toHaveBeenCalled();
     });
   });
 });

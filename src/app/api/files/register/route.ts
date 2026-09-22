@@ -33,6 +33,12 @@ export async function POST(req: NextRequest) {
     if (message.includes("not found")) {
       return apiError("NOT_FOUND", message, 404);
     }
+    if (message.includes("does not belong") || message.includes("courseId is required")) {
+      return apiError("INVALID_ATTACHMENT_SCOPE", message, 422);
+    }
+    if (message.includes("storage") || message.includes("bucket")) {
+      return apiError("STORAGE_ERROR", message, 502);
+    }
     return apiError("INTERNAL_ERROR", message, 500);
   }
 }

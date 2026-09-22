@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Dialog, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -16,6 +17,8 @@ import {
   DollarSign,
   User,
   Filter,
+  Save,
+  Edit,
 } from "lucide-react";
 
 interface PaymentRequestItem {
@@ -54,6 +57,10 @@ export default function AdminPaymentsPage() {
   const [reviewAction, setReviewAction] = useState<"APPROVED" | "REJECTED">("APPROVED");
   const [adminNotes, setAdminNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [editingPhoneId, setEditingPhoneId] = useState<string | null>(null);
+  const [phoneDraft, setPhoneDraft] = useState("");
+  const [isSavingPhone, setIsSavingPhone] = useState(false);
+  const [phoneError, setPhoneError] = useState<string | null>(null);
 
   const loadRequests = async () => {
     try {
@@ -106,6 +113,34 @@ export default function AdminPaymentsPage() {
       console.error("Failed to review request:", err);
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleEditPhone = (req: PaymentRequestItem) => {
+    setEditingPhoneId(req.id);
+    setPhoneDraft(req.student?.phone || "");
+    setPhoneError(null);
+  };
+
+  const handleSavePhone = async (requestId: string) => {
+    setIsSavingPhone(true);
+    setPhoneError(null);
+    try {
+      const res = await fetch(`/api/payments/${requestId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ studentPhone: phoneDraft }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        throw new Error(json?.error?.message || "فشل حفظ رقم التواصل");
+      }
+      setEditingPhoneId(null);
+      await loadRequests();
+    } catch (err) {
+      setPhoneError(err instanceof Error ? err.message : "فشل حفظ رقم التواصل");
+    } finally {
+      setIsSavingPhone(false);
     }
   };
 
@@ -184,7 +219,46 @@ export default function AdminPaymentsPage() {
                         </div>
                         <div>
                           <p className="font-bold text-slate-900">{req.student?.fullName || req.student?.email || "Student"}</p>
-                          <p className="text-[11px] text-slate-400 font-mono">{req.student?.email || req.student?.phone || "-"}</p>
+                          <p className="text-[11px] text-slate-400 font-mono">{req.student?.email || "-"}</p>
+                          {editingPhoneId === req.id ? (
+                            <div className="mt-2 flex items-center gap-1.5">
+                              <Input
+                                value={phoneDraft}
+                                onChange={(e) => setPhoneDraft(e.target.value)}
+                                placeholder="رقم واتساب"
+                                className="h-7 w-36 text-[11px] dir-ltr text-left"
+                                dir="ltr"
+                                disabled={isSavingPhone}
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => handleSavePhone(req.id)}
+                                disabled={isSavingPhone}
+                                className="h-7 px-2 bg-emerald-600 hover:bg-emerald-700"
+                                title="حفظ رقم واتساب"
+                              >
+                                <Save className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="mt-1 flex items-center gap-2">
+                              <span className="text-[11px] text-slate-500 font-mono dir-ltr">
+                                واتساب: {req.student?.phone || "غير مسجل"}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleEditPhone(req)}
+                                className="text-slate-400 hover:text-blue-600"
+                                title="تعديل رقم واتساب"
+                              >
+                                <Edit className="h-3 w-3" />
+                              </button>
+                            </div>
+                          )}
+                          {phoneError && editingPhoneId === req.id && (
+                            <p className="mt-1 text-[10px] text-red-600">{phoneError}</p>
+                          )}
                         </div>
                       </div>
                     </td>

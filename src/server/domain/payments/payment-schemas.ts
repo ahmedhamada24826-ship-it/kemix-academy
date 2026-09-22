@@ -11,6 +11,13 @@ export const ReviewPaymentRequestSchema = z.object({
   rejectionReason: z.string().trim().max(500).optional(),
 });
 
+export const UpdatePaymentRequestSchema = z.object({
+  studentPhone: z.preprocess(
+    (value) => (value === null || (typeof value === "string" && value.trim() === "") ? null : value),
+    z.string().trim().max(30, "Phone number cannot exceed 30 characters").nullable()
+  ),
+});
+
 export const PaymentRequestQuerySchema = z.object({
   status: z.enum(["PENDING", "APPROVED", "REJECTED"]).optional(),
   courseId: z.string().uuid().optional(),
@@ -22,4 +29,5 @@ export const PaymentRequestQuerySchema = z.object({
 
 export type CreatePaymentRequestSchemaType = z.infer<typeof CreatePaymentRequestSchema>;
 export type ReviewPaymentRequestSchemaType = z.infer<typeof ReviewPaymentRequestSchema>;
+export type UpdatePaymentRequestSchemaType = z.infer<typeof UpdatePaymentRequestSchema>;
 export type PaymentRequestQuerySchemaType = z.infer<typeof PaymentRequestQuerySchema>;

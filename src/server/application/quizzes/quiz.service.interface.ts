@@ -5,6 +5,7 @@ import {
   CreateQuizInput,
   UpdateQuizInput,
   CreateQuizQuestionInput,
+  UpdateQuizQuestionInput,
   SubmitQuizAttemptInput,
   ManualOverrideInput,
 } from "@/server/domain/quizzes/quiz.types";
@@ -29,6 +30,14 @@ export interface IQuizService {
     user: AuthenticatedUser,
     input: CreateQuizQuestionInput
   ): Promise<QuizQuestionDto>;
+
+  updateQuestion(
+    questionId: string,
+    user: AuthenticatedUser,
+    input: UpdateQuizQuestionInput
+  ): Promise<QuizQuestionDto>;
+
+  deleteQuestion(questionId: string, user: AuthenticatedUser): Promise<void>;
 
   getQuizById(
     quizId: string,

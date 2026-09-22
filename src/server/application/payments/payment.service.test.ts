@@ -130,4 +130,38 @@ describe("PaymentService", () => {
       expect(mockPrisma.$transaction).toHaveBeenCalled();
     });
   });
+
+  describe("updatePaymentRequest", () => {
+    it("updates and clears student phone for an admin", async () => {
+      mockPrisma.paymentRequest.update.mockResolvedValue({
+        id: "req-1",
+        userId: studentUser.id,
+        studentName: studentUser.fullName,
+        studentEmail: studentUser.email,
+        studentPhone: null,
+        courseId: "course-1",
+        status: "APPROVED",
+        user: { id: studentUser.id, fullName: studentUser.fullName, email: studentUser.email },
+        course: { id: "course-1", title: "Course", slug: "course" },
+        reviewedBy: null,
+      });
+
+      const updated = await paymentService.updatePaymentRequest("req-1", adminUser, {
+        studentPhone: null,
+      });
+
+      expect(updated.studentPhone).toBeNull();
+      expect(mockPrisma.paymentRequest.update).toHaveBeenCalledWith(expect.objectContaining({
+        where: { id: "req-1" },
+        data: { studentPhone: null },
+      }));
+    });
+
+    it("rejects non-admin updates", async () => {
+      await expect(
+        paymentService.updatePaymentRequest("req-1", studentUser, { studentPhone: "+201000000000" })
+      ).rejects.toThrow("Only administrators");
+      expect(mockPrisma.paymentRequest.update).not.toHaveBeenCalled();
+    });
+  });
 });

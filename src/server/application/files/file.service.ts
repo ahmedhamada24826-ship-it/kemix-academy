@@ -21,6 +21,39 @@ export class FileService implements IFileService {
     private readonly accessService: CourseAccessService = courseAccessService
   ) {}
 
+  private async validateAttachmentScope(courseId?: string, lessonId?: string): Promise<void> {
+    if (lessonId && !courseId) {
+      throw new Error("courseId is required when attaching a file to a lesson");
+    }
+
+    if (lessonId) {
+      const lesson = await this.prisma.lesson.findUnique({
+        where: { id: lessonId },
+        select: { section: { select: { courseId: true } } },
+      });
+
+      if (!lesson) {
+        throw new Error("Lesson not found");
+      }
+
+      if (lesson.section.courseId !== courseId) {
+        throw new Error("Lesson does not belong to the specified course");
+      }
+      return;
+    }
+
+    if (courseId) {
+      const course = await this.prisma.course.findUnique({
+        where: { id: courseId },
+        select: { id: true, instructorId: true },
+      });
+
+      if (!course) {
+        throw new Error("Course not found");
+      }
+    }
+  }
+
   async requestUploadIntent(
     user: AuthenticatedUser,
     input: RequestUploadIntentInput
@@ -29,6 +62,8 @@ export class FileService implements IFileService {
     if (!canUpload) {
       throw new Error("Forbidden: You do not have permission to upload media");
     }
+
+    await this.validateAttachmentScope(input.courseId, input.lessonId);
 
     if (input.courseId) {
       const course = await this.prisma.course.findUnique({
@@ -66,6 +101,8 @@ export class FileService implements IFileService {
       throw new Error("Forbidden: You do not have permission to register media assets");
     }
 
+    await this.validateAttachmentScope(input.courseId, input.lessonId);
+
     if (input.courseId) {
       const course = await this.prisma.course.findUnique({
         where: { id: input.courseId },
@@ -77,6 +114,12 @@ export class FileService implements IFileService {
       if (!this.accessService.canManageCourse(user, course)) {
         throw new Error("Forbidden: You cannot attach files to this course");
       }
+    }
+
+    const bucketType = input.visibility === "PUBLIC" ? "public" : "protected";
+    const objectExists = await this.storage.checkObjectExists(bucketType, input.storageKey);
+    if (!objectExists) {
+      throw new Error("Uploaded object was not found in storage; file was not registered");
     }
 
     const asset = await this.prisma.fileAsset.create({
@@ -251,5 +294,4 @@ export class FileService implements IFileService {
     }));
   }
 }
-
 export const fileService = new FileService();

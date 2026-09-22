@@ -44,6 +44,10 @@ export interface ReviewPaymentRequestInput {
   rejectionReason?: string;
 }
 
+export interface UpdatePaymentRequestInput {
+  studentPhone: string | null;
+}
+
 export interface PaymentRequestFilterParams {
   status?: PaymentRequestStatus;
   courseId?: string;
