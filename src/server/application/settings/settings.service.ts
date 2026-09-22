@@ -176,7 +176,7 @@ export class PlatformSettingsService implements IPlatformSettingsService {
   ): Promise<{ whatsappUrl: string; message: string }> {
     const settings = await this.getSettings();
 
-    let message = settings.whatsappTemplate
+   const message = settings.whatsappTemplate
       .replace(/{course_name}/g, payload.courseName)
       .replace(/{price}/g, payload.price.toLocaleString("en-US"))
       .replace(/{currency}/g, payload.currency)
