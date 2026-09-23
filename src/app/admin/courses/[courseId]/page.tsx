@@ -1288,17 +1288,6 @@ export default function AdminCourseDetailPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">يفتح الاختبار</label>
-              <Input type="datetime-local" value={quizStartsAt} onChange={(e) => setQuizStartsAt(e.target.value)} />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-700">يغلق الاختبار</label>
-              <Input type="datetime-local" value={quizEndsAt} min={quizStartsAt || undefined} onChange={(e) => setQuizEndsAt(e.target.value)} />
-            </div>
-          </div>
-
           {lessonType === "VIDEO" && (
             <div className="space-y-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
               <div className="space-y-1">
@@ -1477,6 +1466,29 @@ export default function AdminCourseDetailPage({
                 onChange={(e) => setQuizTimeLimit(e.target.value ? Number(e.target.value) : undefined)}
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">يفتح الامتحان</label>
+              <Input
+                type="datetime-local"
+                value={quizStartsAt}
+                onChange={(e) => setQuizStartsAt(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">يغلق الامتحان</label>
+              <Input
+                type="datetime-local"
+                value={quizEndsAt}
+                min={quizStartsAt || undefined}
+                onChange={(e) => setQuizEndsAt(e.target.value)}
+              />
+            </div>
+            <p className="sm:col-span-2 text-[11px] text-slate-500">
+              اترك الموعدين فارغين ليظل الامتحان متاحًا حسب حالة النشر فقط.
+            </p>
           </div>
 
           <DialogFooter className="gap-2">
