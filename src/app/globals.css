@@ -489,6 +489,178 @@ html {
   .certificate-document { width: 100vw; height: 66.666vw; min-height: 0; box-shadow: none; border: 0; print-color-adjust: exact; -webkit-print-color-adjust: exact; }
 }
 
+@media (max-width: 640px) {
+  .certificate-document {
+    width: 100%;
+    aspect-ratio: 3 / 2;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
+  }
+
+  .certificate-topline {
+    font-size: 0.28rem;
+    letter-spacing: 0.12em;
+  }
+
+  .certificate-header {
+    top: 6%;
+  }
+
+  .certificate-logo-image {
+    width: clamp(5.5rem, 27vw, 8rem);
+    height: clamp(1.9rem, 9vw, 2.7rem);
+  }
+
+  .certificate-header h1 {
+    margin-top: 1%;
+    font-size: clamp(0.62rem, 4.3vw, 1rem);
+  }
+
+  .certificate-header > .certificate-divider {
+    margin-top: 2%;
+  }
+
+  .certificate-divider {
+    gap: 0.25rem;
+  }
+
+  .certificate-divider b {
+    width: 0.25rem;
+    height: 0.25rem;
+  }
+
+  .certificate-main {
+    top: 34%;
+    left: 10%;
+    right: 10%;
+  }
+
+  .certificate-kicker,
+  .certificate-label {
+    font-size: clamp(0.28rem, 1.6vw, 0.42rem);
+    letter-spacing: 0.12em;
+  }
+
+  .certificate-main h2 {
+    margin-top: 1%;
+    font-size: clamp(0.85rem, 5.8vw, 1.35rem);
+  }
+
+  .certificate-main h3 {
+    margin-top: 1%;
+    font-size: clamp(0.58rem, 3.5vw, 0.9rem);
+  }
+
+  .certificate-tools {
+    font-size: clamp(0.36rem, 2vw, 0.55rem);
+    letter-spacing: 0.03em;
+  }
+
+  .certificate-statement {
+    margin-top: 1.2%;
+    font-size: clamp(0.3rem, 1.7vw, 0.45rem);
+    line-height: 1.25;
+  }
+
+  .certificate-footer {
+    right: 5%;
+    bottom: 4%;
+    left: 5%;
+    gap: 1%;
+  }
+
+  .certificate-date {
+    gap: 0.15rem;
+  }
+
+  .certificate-date svg {
+    width: 0.65rem;
+    height: 0.65rem;
+  }
+
+  .certificate-date span,
+  .certificate-date strong,
+  .certificate-signature span,
+  .certificate-signature strong,
+  .certificate-qr span {
+    font-size: clamp(0.25rem, 1.5vw, 0.38rem);
+    letter-spacing: 0.02em;
+  }
+
+  .certificate-date strong {
+    margin-top: 0.08rem;
+  }
+
+  .certificate-meta-rule,
+  .signature-rule {
+    margin: 0.15rem 0;
+  }
+
+  .certificate-code,
+  .certificate-qr strong {
+    margin-top: 0.08rem;
+    font-size: clamp(0.24rem, 1.35vw, 0.36rem);
+    letter-spacing: 0;
+  }
+
+  .certificate-footer-motto {
+    margin-top: 0.3rem;
+    font-size: clamp(0.25rem, 1.4vw, 0.36rem);
+    letter-spacing: 0.04em;
+  }
+
+  .certificate-seal {
+    height: 2.8rem;
+  }
+
+  .certificate-seal-ring {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-width: 1px;
+    outline-width: 1px;
+    box-shadow: 0 0 0 2px white, 0 0 0 3px #2563eb;
+  }
+
+  .certificate-seal-ring strong {
+    font-size: 0.3rem;
+  }
+
+  .certificate-seal-ring span {
+    font-size: 0.2rem;
+    letter-spacing: 0.08em;
+  }
+
+  .certificate-seal-ring svg {
+    width: 0.8rem;
+    height: 0.8rem;
+  }
+
+  .certificate-ribbon {
+    top: 1.7rem;
+    width: 0.55rem;
+    height: 1rem;
+  }
+
+  .certificate-ribbon-left { margin-left: -1rem; }
+  .certificate-ribbon-right { margin-left: 1rem; }
+
+  .signature-mark {
+    height: 0.7rem;
+    font-size: clamp(0.4rem, 2vw, 0.6rem);
+  }
+
+  .instructor-signature .signature-mark {
+    font-size: clamp(0.35rem, 1.8vw, 0.55rem);
+  }
+
+  .certificate-qr img,
+  .certificate-qr-placeholder {
+    width: clamp(1.2rem, 7vw, 1.8rem);
+    height: clamp(1.2rem, 7vw, 1.8rem);
+    margin-bottom: 0.1rem;
+    border-width: 1px;
+  }
+}
+
 /*
   Dedicated scroll container styling used by Dialogs and other long panels.
   Guarantees a clearly visible scrollbar (light + focus states) on every

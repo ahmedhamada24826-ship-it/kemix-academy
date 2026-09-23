@@ -61,7 +61,12 @@ interface Quiz {
   timeLimitMinutes?: number | null;
   maxAttempts?: number;
   isPublished?: boolean;
-  questions?: { id: string; prompt: string; options?: { text: string; isCorrect: boolean }[] }[];
+  questions?: {
+    id: string;
+    prompt: string;
+    points?: number;
+    options?: { id?: string; text: string; isCorrect: boolean }[];
+  }[];
 }
 
 interface CourseDetail {
@@ -150,6 +155,7 @@ export default function AdminCourseDetailPage({
   const [isAddingQuiz, setIsAddingQuiz] = useState(false);
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
   const [questionQuizId, setQuestionQuizId] = useState<string | null>(null);
+  const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [questionPrompt, setQuestionPrompt] = useState("");
   const [questionPoints, setQuestionPoints] = useState(10);
   const [questionOptions, setQuestionOptions] = useState([
@@ -251,11 +257,12 @@ export default function AdminCourseDetailPage({
     await refreshData();
   };
 
-  const openQuestionEditor = (quizId: string) => {
+  const openQuestionEditor = (quizId: string, question?: NonNullable<Quiz["questions"]>[number]) => {
     setQuestionQuizId(quizId);
-    setQuestionPrompt("");
-    setQuestionPoints(10);
-    setQuestionOptions([
+    setEditingQuestionId(question?.id || null);
+    setQuestionPrompt(question?.prompt || "");
+    setQuestionPoints(question?.points || 10);
+    setQuestionOptions(question?.options?.map(({ text, isCorrect }) => ({ text, isCorrect })) || [
       { text: "", isCorrect: true },
       { text: "", isCorrect: false },
       { text: "", isCorrect: false },
@@ -269,8 +276,12 @@ export default function AdminCourseDetailPage({
     if (!questionQuizId || !questionPrompt.trim()) return;
     setIsAddingQuestion(true);
     try {
-      const res = await fetch(`/api/quizzes/${questionQuizId}/questions`, {
-        method: "POST",
+      const res = await fetch(
+        editingQuestionId
+          ? `/api/quizzes/${questionQuizId}/questions/${editingQuestionId}`
+          : `/api/quizzes/${questionQuizId}/questions`,
+        {
+        method: editingQuestionId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           prompt: questionPrompt.trim(),
@@ -279,9 +290,11 @@ export default function AdminCourseDetailPage({
             .filter((option) => option.text.trim())
             .map((option, index) => ({ ...option, text: option.text.trim(), sortOrder: index })),
         }),
-      });
+        }
+      );
       if (!res.ok) throw new Error((await res.json()).error?.message || "فشل إضافة السؤال");
       setQuestionModalOpen(false);
+      setEditingQuestionId(null);
       await refreshData();
     } finally {
       setIsAddingQuestion(false);
@@ -874,7 +887,16 @@ export default function AdminCourseDetailPage({
                       </p>
                       {quiz.questions?.map((question) => (
                         <p key={question.id} className="text-[11px] text-slate-600 mt-1">
-                          سؤال: {question.prompt} ({question.options?.filter((option) => option.isCorrect).length || 0} إجابة صحيحة)
+                          <span>سؤال: {question.prompt} ({question.options?.filter((option) => option.isCorrect).length || 0} إجابة صحيحة)</span>
+                          <button
+                            type="button"
+                            onClick={() => openQuestionEditor(quiz.id, question)}
+                            className="mr-2 inline-flex items-center gap-1 rounded border border-blue-200 px-1.5 py-0.5 text-[10px] font-bold text-blue-700 hover:bg-blue-50"
+                            aria-label={`تعديل السؤال ${question.prompt}`}
+                          >
+                            <Edit className="h-2.5 w-2.5" />
+                            تعديل
+                          </button>
                         </p>
                       ))}
                     </div>
@@ -1441,7 +1463,7 @@ export default function AdminCourseDetailPage({
       {/* Add Quiz Question Dialog */}
       <Dialog open={questionModalOpen} onOpenChange={setQuestionModalOpen}>
         <DialogHeader>
-          <DialogTitle>إضافة سؤال للاختبار</DialogTitle>
+          <DialogTitle>{editingQuestionId ? "تعديل سؤال الاختبار" : "إضافة سؤال للاختبار"}</DialogTitle>
           <DialogDescription>أدخل السؤال وخياراته وحدد الإجابة الصحيحة.</DialogDescription>
         </DialogHeader>
         <form onSubmit={handleAddQuestion} className="space-y-4 py-2 text-right">
@@ -1457,7 +1479,7 @@ export default function AdminCourseDetailPage({
           </div>
           <DialogFooter className="gap-2">
             <Button type="button" variant="outline" onClick={() => setQuestionModalOpen(false)}>إلغاء</Button>
-            <Button type="submit" disabled={isAddingQuestion} className="bg-[#2563EB] text-white">{isAddingQuestion ? "جاري الإضافة..." : "إضافة السؤال"}</Button>
+            <Button type="submit" disabled={isAddingQuestion} className="bg-[#2563EB] text-white">{isAddingQuestion ? "جاري الحفظ..." : editingQuestionId ? "حفظ تعديلات السؤال" : "إضافة السؤال"}</Button>
           </DialogFooter>
         </form>
       </Dialog>
