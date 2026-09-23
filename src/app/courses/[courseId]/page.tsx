@@ -4,6 +4,7 @@ import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { normalizeCourseList } from "./course-normalization";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -55,9 +56,9 @@ interface CourseDetail {
   price?: number;
   currency?: string;
   isFree?: boolean;
-  tools?: string[];
-  requirements?: string[];
-  whatYouWillLearn?: string[];
+  tools?: string[] | string | null;
+  requirements?: string[] | string | null;
+  whatYouWillLearn?: string[] | string | null;
   isEnrolled?: boolean;
   instructor?: {
     id: string;
@@ -220,6 +221,9 @@ export default function CourseDetailPage({
   };
 
   const totalLessons = sections.reduce((acc, sec) => acc + (sec.lessons?.length || 0), 0);
+  const courseRequirements = normalizeCourseList(course?.requirements);
+  const courseLearnItems = normalizeCourseList(course?.whatYouWillLearn);
+  const courseTools = normalizeCourseList(course?.tools);
 
   if (isLoading) {
     return (
@@ -396,7 +400,7 @@ export default function CourseDetailPage({
           {/* Main Column */}
           <div className="lg:col-span-2 space-y-10">
             {/* What You Will Learn */}
-            {course.whatYouWillLearn && course.whatYouWillLearn.length > 0 && (
+            {courseLearnItems.length > 0 && (
               <Card className="bg-white border-blue-100 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-lg font-bold text-slate-900 flex items-center gap-2">
@@ -406,7 +410,7 @@ export default function CourseDetailPage({
                 </CardHeader>
                 <CardContent>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs sm:text-sm text-slate-700">
-                    {course.whatYouWillLearn.map((item, idx) => (
+                    {courseLearnItems.map((item, idx) => (
                       <div key={idx} className="flex items-start gap-2">
                         <CheckCircle2 className="h-4 w-4 text-emerald-600 mt-0.5 flex-shrink-0" />
                         <span>{item}</span>
@@ -548,7 +552,7 @@ export default function CourseDetailPage({
           {/* Sidebar Info */}
           <div className="space-y-6">
             {/* Tools Used */}
-            {course.tools && course.tools.length > 0 && (
+            {courseTools.length > 0 && (
               <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-base font-bold text-slate-900 flex items-center gap-2">
@@ -558,7 +562,7 @@ export default function CourseDetailPage({
                 </CardHeader>
                 <CardContent>
                   <div className="flex flex-wrap gap-1.5">
-                    {course.tools.map((t, idx) => (
+                    {courseTools.map((t, idx) => (
                       <Badge key={idx} variant="outline" className="bg-slate-50 text-slate-800 text-xs font-mono font-bold py-1 px-2.5">
                         {t}
                       </Badge>
@@ -577,8 +581,8 @@ export default function CourseDetailPage({
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-2 text-xs text-slate-600 leading-relaxed">
-                {course.requirements && course.requirements.length > 0 ? (
-                  course.requirements.map((req, idx) => (
+                {courseRequirements.length > 0 ? (
+                  courseRequirements.map((req, idx) => (
                     <p key={idx}>• {req}</p>
                   ))
                 ) : (

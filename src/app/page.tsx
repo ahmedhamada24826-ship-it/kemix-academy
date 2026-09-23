@@ -222,38 +222,33 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
       {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-[#07162C] via-[#0B2D5B] to-[#0F172A] text-white pt-20 pb-28 px-4 sm:px-6 lg:px-8">
-        {/* Ambient background glow accents */}
-        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-blue-500/20 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute -bottom-10 right-10 w-96 h-96 bg-cyan-500/10 blur-[100px] rounded-full pointer-events-none" />
+      <section className="home-hero-shell relative overflow-hidden text-white pt-20 pb-20 px-4 sm:px-6 lg:px-8">
+        <div className="home-hero-grid absolute inset-0 opacity-20" />
+        <div className="absolute -bottom-10 right-10 w-72 h-72 bg-cyan-500/5 blur-[80px] rounded-full pointer-events-none" />
+        <div className="absolute left-10 top-20 h-24 w-24 rounded-full border border-cyan-300/10" />
+        <div className="absolute right-16 bottom-12 h-28 w-28 rounded-full border border-blue-300/10" />
 
-        <div className="container relative mx-auto max-w-6xl text-center space-y-8">
-          {/* Badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/30 text-cyan-300 text-xs font-bold tracking-wide shadow-inner">
-            <Sparkles className="h-4 w-4 text-cyan-300" />
+        <div className="container relative mx-auto max-w-6xl text-center space-y-7">
+          <div className="hero-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-cyan-200 text-xs font-bold tracking-[0.08em]">
+            <Sparkles className="h-4 w-4 text-cyan-200" />
             <span>{hero.badge}</span>
           </div>
 
-          {/* Main Headline */}
-          <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[1.15] max-w-4xl mx-auto">
-            <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-sky-200 bg-clip-text text-transparent">
-              {hero.heading}
-            </span>
+          <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl font-black tracking-[-0.05em] leading-[1.1] max-w-4xl mx-auto text-white">
+            {hero.heading}
           </h1>
 
-          {/* Tagline / Subheading */}
-          <p className="text-xl sm:text-2xl text-slate-300 font-bold max-w-2xl mx-auto leading-relaxed">
+          <p className="text-xl sm:text-2xl text-white font-bold max-w-2xl mx-auto leading-relaxed tracking-[-0.02em]">
             {hero.subheading}
           </p>
 
-          <p className="text-sm sm:text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-100 max-w-2xl mx-auto leading-relaxed font-medium">
             {hero.description}
           </p>
 
-          {/* Action CTAs */}
           <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
             <Link href="/courses">
-              <Button size="lg" className="bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-base px-8 h-12 shadow-lg shadow-blue-500/25 flex items-center gap-2">
+              <Button size="lg" className="bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-base px-8 h-12 shadow-md flex items-center gap-2 rounded-xl">
                 <span>{hero.ctaPrimary}</span>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
@@ -262,20 +257,19 @@ export default function HomePage() {
               <Button
                 variant="outline"
                 size="lg"
-                className="border-slate-600 bg-slate-900/50 hover:bg-slate-800 text-white text-base px-6 h-12"
+                className="border-slate-600 bg-slate-900/35 hover:bg-slate-800 text-white text-base px-6 h-12 rounded-xl"
               >
                 {hero.ctaSecondary}
               </Button>
             </Link>
           </div>
 
-          {/* Category Chips Bar */}
           <div className="pt-10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
             {categories.map((cat, idx) => (
               <Link
                 key={idx}
                 href={`/courses?category=${encodeURIComponent(cat.query)}`}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/60 text-xs sm:text-sm font-medium text-slate-200 hover:text-white transition-all backdrop-blur-sm"
+                className="glass-chip flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-200 hover:text-white transition-all duration-200 hover:border-blue-300/60 hover:bg-slate-800/80"
               >
                 <span className="text-cyan-400">{cat.icon}</span>
                 <span>{cat.name}</span>
@@ -290,7 +284,7 @@ export default function HomePage() {
         <section className="border-y border-slate-200 bg-white py-8 px-4 sm:px-6">
           <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {stats.items.map((item, idx) => (
-              <div key={idx} className="space-y-1">
+              <div key={idx} className="home-stat-card space-y-1 rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_10px_25px_rgba(15,23,42,0.04)]">
                 <p className="text-2xl sm:text-3xl font-black text-[#0B2D5B]">{item.value}</p>
                 <p className="text-xs sm:text-sm text-slate-500 font-semibold">{item.label}</p>
               </div>
@@ -340,7 +334,7 @@ export default function HomePage() {
               courses.map((course) => (
                 <Card
                   key={course.id}
-                  className="flex flex-col overflow-hidden border-slate-200/80 hover:border-blue-300 hover:shadow-lg transition-all duration-200 group bg-white"
+                  className="home-course-card flex flex-col overflow-hidden border-slate-200/80 hover:border-blue-300 hover:shadow-[0_22px_45px_rgba(37,99,235,0.08)] transition-all duration-200 group bg-white rounded-2xl"
                 >
                   <div className="relative h-48 w-full bg-gradient-to-tr from-[#0B2D5B] to-[#2563EB] overflow-hidden">
                     {course.coverImageUrl ? (
@@ -480,7 +474,7 @@ export default function HomePage() {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {features.items.length > 0 ? (
               features.items.map((feat, idx) => (
-                <Card key={idx} className="border-slate-200 hover:border-blue-300 transition-all shadow-sm">
+                <Card key={idx} className="home-feature-card border-slate-200 hover:border-blue-300 transition-all shadow-sm rounded-2xl">
                   <CardHeader className="space-y-3">
                     <div className="p-3 rounded-xl bg-blue-50 w-fit">
                       <BookOpen className="h-6 w-6 text-blue-500" />
@@ -498,7 +492,7 @@ export default function HomePage() {
               ))
             ) : (
               featuresDefault.map((feat, idx) => (
-                <Card key={idx} className="border-slate-200 hover:border-blue-300 transition-all shadow-sm">
+                <Card key={idx} className="home-feature-card border-slate-200 hover:border-blue-300 transition-all shadow-sm rounded-2xl">
                   <CardHeader className="space-y-3">
                     <div className="p-3 rounded-xl bg-blue-50 w-fit">
                       {feat.icon}
@@ -536,7 +530,7 @@ export default function HomePage() {
               testimonials.items.map((item, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col justify-between p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4"
+                  className="home-testimonial-card flex flex-col justify-between p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4 shadow-[0_20px_35px_rgba(15,23,42,0.12)]"
                 >
                   <p className="text-sm text-slate-300 leading-relaxed italic">
                     &ldquo;{item.quote}&rdquo;
@@ -554,7 +548,7 @@ export default function HomePage() {
               testimonialsDefault.map((testi, idx) => (
                 <div
                   key={idx}
-                  className="flex flex-col justify-between p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4"
+                  className="home-testimonial-card flex flex-col justify-between p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4 shadow-[0_20px_35px_rgba(15,23,42,0.12)]"
                 >
                   <p className="text-sm text-slate-300 leading-relaxed italic">
                     &ldquo;{testi.quote}&rdquo;
@@ -575,12 +569,12 @@ export default function HomePage() {
 
       {/* CTA Bottom Banner */}
       {cta.enabled && (
-        <section className="bg-gradient-to-l from-[#0B2D5B] via-[#1D4ED8] to-[#0284C7] text-white py-16 px-4 sm:px-6">
+        <section className="home-cta-card bg-gradient-to-l from-[#0B2D5B] via-[#1D4ED8] to-[#0284C7] text-white py-16 px-4 sm:px-6">
           <div className="container mx-auto max-w-4xl text-center space-y-6">
-            <h2 className="text-3xl sm:text-4xl font-black tracking-tight">
+            <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
               {cta.heading}
             </h2>
-            <p className="text-base sm:text-lg text-blue-100 max-w-xl mx-auto leading-relaxed">
+            <p className="text-base sm:text-lg text-slate-100 max-w-xl mx-auto leading-relaxed font-medium">
               {cta.description}
             </p>
             <div className="pt-2 flex flex-wrap justify-center gap-4">

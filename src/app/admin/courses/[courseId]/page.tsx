@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, use } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -110,10 +111,12 @@ export default function AdminCourseDetailPage({
 }) {
   const { courseId } = use(params);
 
+  const router = useRouter();
   const [course, setCourse] = useState<CourseDetail | null>(null);
   const [sections, setSections] = useState<Section[]>([]);
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Edit metadata form state
   const [title, setTitle] = useState("");
@@ -371,6 +374,9 @@ export default function AdminCourseDetailPage({
   }, [coverPreview]);
 
   const refreshData = React.useCallback(async () => {
+    setIsLoading(true);
+    setLoadError(null);
+
     try {
       const [cRes, sRes, qRes] = await Promise.all([
         fetch(`/api/courses/${courseId}`),
@@ -378,24 +384,32 @@ export default function AdminCourseDetailPage({
         fetch(`/api/courses/${courseId}/quizzes`),
       ]);
 
-      if (cRes.ok) {
-        const cData = await cRes.json();
-        if (cData.success && cData.data?.course) {
-          const c: CourseDetail = cData.data.course;
-          setCourse(c);
-          setTitle(c.title);
-          setShortDesc(c.shortDescription || "");
-          setDesc(c.description || "");
-          setLevel(c.level);
-          setCoverUrl(c.coverImageUrl || "");
-          setPrice(c.price || 0);
-          setCurrency(c.currency || "EGP");
-          setIsFree(c.isFree || false);
-          setCertificatesEnabled(c.certificatesEnabled || false);
-          setToolsStr(Array.isArray(c.tools) ? c.tools.join(", ") : "");
-          setRequirementsStr(c.requirements || "");
-          setLearnOutcomesStr(Array.isArray(c.whatYouWillLearn) ? c.whatYouWillLearn.join("\n") : "");
+      if (!cRes.ok) {
+        if (cRes.status === 404) {
+          setCourse(null);
+          setLoadError("هذا الكورس غير موجود أو تم حذفه.");
+          return;
         }
+
+        throw new Error(`Failed to load course (${cRes.status})`);
+      }
+
+      const cData = await cRes.json();
+      if (cData.success && cData.data?.course) {
+        const c: CourseDetail = cData.data.course;
+        setCourse(c);
+        setTitle(c.title);
+        setShortDesc(c.shortDescription || "");
+        setDesc(c.description || "");
+        setLevel(c.level);
+        setCoverUrl(c.coverImageUrl || "");
+        setPrice(c.price || 0);
+        setCurrency(c.currency || "EGP");
+        setIsFree(c.isFree || false);
+        setCertificatesEnabled(c.certificatesEnabled || false);
+        setToolsStr(Array.isArray(c.tools) ? c.tools.join(", ") : "");
+        setRequirementsStr(c.requirements || "");
+        setLearnOutcomesStr(Array.isArray(c.whatYouWillLearn) ? c.whatYouWillLearn.join("\n") : "");
       }
 
       if (sRes.ok) {
@@ -421,6 +435,8 @@ export default function AdminCourseDetailPage({
       }
     } catch (err) {
       console.error("Failed to load course details:", err);
+      setLoadError("تعذّر تحميل بيانات الكورس. حاول مرة أخرى لاحقاً.");
+      setCourse(null);
     } finally {
       setIsLoading(false);
     }
@@ -678,11 +694,33 @@ export default function AdminCourseDetailPage({
     if (response.ok) await refreshData();
   };
 
-  if (isLoading || !course) {
+  if (isLoading) {
     return (
       <div className="space-y-6 animate-pulse" dir="rtl">
         <div className="h-6 w-1/4 bg-slate-200 rounded" />
         <div className="h-64 bg-slate-200 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center px-4" dir="rtl">
+        <div className="max-w-md rounded-2xl border border-slate-200 bg-white p-8 text-center shadow-sm">
+          <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-red-50 text-2xl text-red-600">
+            !
+          </div>
+          <h1 className="text-2xl font-black text-slate-900">الكورس غير موجود</h1>
+          <p className="mt-3 text-sm text-slate-600">
+            {loadError || "قد يكون الرابط غير صحيح أو تم حذف هذا الكورس."}
+          </p>
+          <Button
+            onClick={() => router.push("/admin/courses")}
+            className="mt-6 bg-[#0B2D5B] hover:bg-blue-700 text-white font-bold"
+          >
+            العودة إلى قائمة الكورسات
+          </Button>
+        </div>
       </div>
     );
   }
@@ -876,7 +914,7 @@ export default function AdminCourseDetailPage({
           )}
 
           {/* Section Assessments / Quizzes */}
-          <div className="space-y-4 pt-4 border-t border-slate-200">
+          <div className="quiz-manager-panel space-y-4 pt-4 rounded-2xl p-4">
             <div className="flex items-center justify-between">
               <h2 className="text-base font-bold text-slate-900 flex items-center gap-2">
                 <HelpCircle className="h-4 w-4 text-indigo-600" />
@@ -886,7 +924,7 @@ export default function AdminCourseDetailPage({
                 size="sm"
                 variant="outline"
                 onClick={openQuizCreate}
-                className="text-xs h-8 flex items-center gap-1.5 bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+                className="text-xs h-8 flex items-center gap-1.5 bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-50 rounded-xl"
               >
                 <PlusCircle className="h-3.5 w-3.5 ml-1" />
                 <span>إضافة اختبار</span>
@@ -902,7 +940,7 @@ export default function AdminCourseDetailPage({
                 quizzes.map((quiz) => (
                   <div
                     key={quiz.id}
-                    className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-sm flex items-center justify-between text-xs"
+                    className="quiz-manager-item p-3.5 rounded-2xl flex items-center justify-between text-xs"
                   >
                     <div>
                       <p className="font-bold text-slate-900">{quiz.title}</p>
@@ -1432,7 +1470,7 @@ export default function AdminCourseDetailPage({
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleAddQuiz} className="space-y-4 py-2 text-right">
+        <form onSubmit={handleAddQuiz} className="quiz-form-card space-y-4 rounded-2xl p-4 py-3 text-right">
           <div className="space-y-1">
             <label className="text-xs font-bold text-slate-700">عنوان الاختبار</label>
             <Input
@@ -1468,7 +1506,7 @@ export default function AdminCourseDetailPage({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-2xl border border-blue-100 bg-blue-50/70 p-3">
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700">يفتح الامتحان</label>
               <Input
