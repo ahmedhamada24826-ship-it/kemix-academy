@@ -117,20 +117,6 @@ export function Logo({
   const isMonochrome = variant === "monochrome";
   const isAppIcon = variant === "app-icon";
 
-  const sizeClasses = {
-    sm: "text-base tracking-tight",
-    md: "text-xl tracking-tight",
-    lg: "text-2xl tracking-tight",
-    xl: "text-3xl tracking-tight",
-  };
-
-  const academyClasses = {
-    sm: "text-[9px] tracking-[0.22em]",
-    md: "text-[11px] tracking-[0.25em]",
-    lg: "text-[13px] tracking-[0.28em]",
-    xl: "text-[16px] tracking-[0.3em]",
-  };
-
   const iconSizes = {
     sm: "h-6 w-6",
     md: "h-8 w-8",
@@ -149,60 +135,30 @@ export function Logo({
     );
   }
 
-  const content = (
-    <div className={cn("inline-flex items-center gap-3 select-none", className)}>
-      <KemixLogoIcon
-        variant={isMonochrome ? "monochrome" : isDarkBg ? "dark" : "light"}
-        className={iconSizes[size]}
-      />
-      {variant !== "icon-only" && (
-        <div className="flex flex-col justify-center">
-          <div className="flex items-baseline leading-none">
-            <span
-              className={cn(
-                "font-black font-sans",
-                sizeClasses[size],
-                isMonochrome
-                  ? "text-current"
-                  : isDarkBg
-                  ? "text-white"
-                  : "text-[#0B2D5B]"
-              )}
-            >
-              KEMIX
-            </span>
-          </div>
-          <span
-            className={cn(
-              "font-bold uppercase leading-tight font-sans mt-0.5",
-              academyClasses[size],
-              isMonochrome
-                ? "text-current opacity-80"
-                : isDarkBg
-                ? "text-[#38BDF8]"
-                : "text-[#2563EB]"
-            )}
-          >
-            ACADEMY
-          </span>
-          {showTagline && (
-            <span
-              className={cn(
-                "text-[9px] tracking-[0.2em] uppercase font-semibold mt-1",
-                isMonochrome
-                  ? "text-current opacity-60"
-                  : isDarkBg
-                  ? "text-slate-400"
-                  : "text-slate-500"
-              )}
-            >
-              Learn • Build • Grow
-            </span>
-          )}
-        </div>
-      )}
-    </div>
-  );
+  const content =
+    variant === "icon-only" ? (
+      <div className={cn("inline-flex select-none", className)}>
+        <KemixLogoIcon
+          variant={isMonochrome ? "monochrome" : isDarkBg ? "dark" : "light"}
+          className={iconSizes[size]}
+        />
+      </div>
+    ) : (
+      <span
+        className={cn(
+          "brand-logo-image-frame",
+          `brand-logo-image-frame-${size}`,
+          isDarkBg && "brand-logo-image-frame-dark",
+          className
+        )}
+      >
+        <img
+          src="/kemix-academy-logo.png"
+          alt="KEMIX Academy — Learn • Build • Grow"
+          className="brand-logo-image"
+        />
+      </span>
+    );
 
   if (href) {
     return (

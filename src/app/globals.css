@@ -79,6 +79,33 @@ html {
   scrollbar-color: rgba(148, 163, 184, 0.55) transparent;
 }
 
+.brand-logo-image-frame {
+  position: relative;
+  display: inline-block;
+  flex-shrink: 0;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.brand-logo-image-frame-dark {
+  border-radius: 0.5rem;
+  background: #ffffff;
+}
+
+.brand-logo-image-frame-sm { width: 6.75rem; height: 2.5rem; }
+.brand-logo-image-frame-md { width: 9rem; height: 3.35rem; }
+.brand-logo-image-frame-lg { width: 11.5rem; height: 4.25rem; }
+.brand-logo-image-frame-xl { width: 14rem; height: 5.1rem; }
+
+.brand-logo-image {
+  position: absolute;
+  top: -35%;
+  left: 0;
+  width: 100%;
+  height: 170%;
+  object-fit: contain;
+}
+
 .certificate-shell {
   width: 100%;
   color: #0b2d5b;
