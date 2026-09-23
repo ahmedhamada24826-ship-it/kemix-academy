@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import QRCode from "qrcode";
-import { CalendarDays, Printer } from "lucide-react";
+import { CalendarDays, Linkedin, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KemixLogoIcon } from "@/components/brand/logo";
 
@@ -24,6 +24,25 @@ export function CertificateDocument({ certificate, showActions = true }: Certifi
   const [qrCode, setQrCode] = useState<string | null>(null);
   const verificationPath = `/certificates/verify/${encodeURIComponent(certificate.certificateCode)}`;
 
+  const addToLinkedIn = () => {
+    const issuedDate = new Date(certificate.issuedAt);
+    const params = new URLSearchParams({
+      startTask: "CERTIFICATION_NAME",
+      name: certificate.courseTitle,
+      organizationName: "KEMIX Academy",
+      issueYear: String(issuedDate.getFullYear()),
+      issueMonth: String(issuedDate.getMonth() + 1),
+      certId: certificate.certificateCode,
+      certUrl: `${window.location.origin}${verificationPath}`,
+    });
+
+    window.open(
+      `https://www.linkedin.com/profile/add?${params.toString()}`,
+      "_blank",
+      "noopener,noreferrer"
+    );
+  };
+
   useEffect(() => {
     const verificationUrl = `${window.location.origin}${verificationPath}`;
     QRCode.toDataURL(verificationUrl, {
@@ -41,6 +60,15 @@ export function CertificateDocument({ certificate, showActions = true }: Certifi
           <Button type="button" onClick={() => window.print()} className="bg-[#0B2D5B] hover:bg-[#2563EB]">
             <Printer className="h-4 w-4" />
             <span>Print / Save as PDF</span>
+          </Button>
+          <Button
+            type="button"
+            onClick={addToLinkedIn}
+            className="bg-[#0A66C2] hover:bg-[#004182]"
+            aria-label="Add certificate to LinkedIn"
+          >
+            <Linkedin className="h-4 w-4" />
+            <span>Add to LinkedIn</span>
           </Button>
         </div>
       )}
