@@ -397,10 +397,19 @@ export default function AdminQuizzesPage() {
                 <div className="pt-2 border-t border-slate-100 flex items-center justify-between">
                   <span className="text-[11px] text-slate-400">{quiz.isPublished ? "منشور" : "مسودة"}</span>
                   <div className="flex items-center gap-1">
-                    <Button type="button" size="sm" variant="ghost" onClick={() => handleOpenEdit(quiz)} title="تعديل الاختبار">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleOpenEdit(quiz)}
+                      title="تعديل الاختبار"
+                      aria-label={`تعديل الاختبار ${quiz.title}`}
+                      className="gap-1 border-blue-200 text-blue-700 hover:bg-blue-50"
+                    >
                       <Edit className="h-3.5 w-3.5" />
+                      <span>تعديل</span>
                     </Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteQuiz(quiz)} title="حذف الاختبار">
+                    <Button type="button" size="sm" variant="ghost" onClick={() => handleDeleteQuiz(quiz)} title="حذف الاختبار" aria-label={`حذف الاختبار ${quiz.title}`}>
                       <Trash2 className="h-3.5 w-3.5 text-red-600" />
                     </Button>
                     <Button type="button" size="sm" variant="outline" onClick={() => handleTogglePublish(quiz)}>

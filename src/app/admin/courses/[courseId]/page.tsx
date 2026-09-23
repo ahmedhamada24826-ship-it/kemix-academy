@@ -143,6 +143,7 @@ export default function AdminCourseDetailPage({
 
   // Add quiz modal
   const [quizModalOpen, setQuizModalOpen] = useState(false);
+  const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState("");
   const [quizPassingScore, setQuizPassingScore] = useState(75);
   const [quizTimeLimit, setQuizTimeLimit] = useState<number | undefined>(20);
@@ -588,19 +589,23 @@ export default function AdminCourseDetailPage({
 
     setIsAddingQuiz(true);
     try {
-      const res = await fetch(`/api/courses/${courseId}/quizzes`, {
-        method: "POST",
+      const res = await fetch(
+        editingQuizId ? `/api/quizzes/${editingQuizId}` : `/api/courses/${courseId}/quizzes`,
+        {
+        method: editingQuizId ? "PATCH" : "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: quizTitle.trim(),
-          lessonId: sections[0]?.lessons[0]?.id || undefined,
+          ...(!editingQuizId && { lessonId: sections[0]?.lessons[0]?.id || undefined }),
           passingScore: Number(quizPassingScore) || 75,
-          timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : undefined,
+          timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : null,
         }),
-      });
+        }
+      );
 
       if (res.ok) {
         setQuizModalOpen(false);
+        setEditingQuizId(null);
         setQuizTitle("");
         await refreshData();
       }
@@ -609,6 +614,22 @@ export default function AdminCourseDetailPage({
     } finally {
       setIsAddingQuiz(false);
     }
+  };
+
+  const openQuizCreate = () => {
+    setEditingQuizId(null);
+    setQuizTitle("");
+    setQuizPassingScore(75);
+    setQuizTimeLimit(20);
+    setQuizModalOpen(true);
+  };
+
+  const openQuizEdit = (quiz: Quiz) => {
+    setEditingQuizId(quiz.id);
+    setQuizTitle(quiz.title);
+    setQuizPassingScore(quiz.passingScore);
+    setQuizTimeLimit(quiz.timeLimitMinutes ?? undefined);
+    setQuizModalOpen(true);
   };
 
   const handleToggleQuizPublish = async (quiz: Quiz) => {
@@ -827,7 +848,7 @@ export default function AdminCourseDetailPage({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => setQuizModalOpen(true)}
+                onClick={openQuizCreate}
                 className="text-xs h-8 flex items-center gap-1.5 bg-white border-indigo-200 text-indigo-700 hover:bg-indigo-50"
               >
                 <PlusCircle className="h-3.5 w-3.5 ml-1" />
@@ -858,6 +879,18 @@ export default function AdminCourseDetailPage({
                       ))}
                     </div>
                     <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openQuizEdit(quiz)}
+                        title="تعديل الاختبار"
+                        aria-label={`تعديل الاختبار ${quiz.title}`}
+                        className="h-7 gap-1 border-blue-200 text-[10px] text-blue-700 hover:bg-blue-50"
+                      >
+                        <Edit className="h-3 w-3" />
+                        <span>تعديل</span>
+                      </Button>
                       <Button
                         type="button"
                         size="sm"
@@ -1344,7 +1377,7 @@ export default function AdminCourseDetailPage({
       {/* Add Quiz Dialog */}
       <Dialog open={quizModalOpen} onOpenChange={setQuizModalOpen}>
         <DialogHeader>
-          <DialogTitle>إعداد اختبار تقييمي جديد</DialogTitle>
+          <DialogTitle>{editingQuizId ? "تعديل الاختبار" : "إعداد اختبار تقييمي جديد"}</DialogTitle>
           <DialogDescription>
             حدد معايير الاختبار، درجة النجاح، والوقت المحدد للمحاولة.
           </DialogDescription>
@@ -1399,7 +1432,7 @@ export default function AdminCourseDetailPage({
               disabled={isAddingQuiz}
               className="bg-[#2563EB] hover:bg-blue-700 text-white font-bold"
             >
-              {isAddingQuiz ? "جاري الإنشاء..." : "إنشاء الاختبار"}
+              {isAddingQuiz ? "جاري الحفظ..." : editingQuizId ? "حفظ تعديلات الاختبار" : "إنشاء الاختبار"}
             </Button>
           </DialogFooter>
         </form>
