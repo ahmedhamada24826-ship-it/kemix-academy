@@ -496,7 +496,7 @@ html {
 
   .certificate-document {
     width: 100%;
-    min-height: 760px;
+    min-height: 940px;
     aspect-ratio: auto;
     background-size: 100% 100%;
     box-shadow: 0 10px 24px rgba(15, 23, 42, 0.16);
@@ -539,7 +539,7 @@ html {
   }
 
   .certificate-main {
-    top: 29%;
+    top: 27%;
     left: 10%;
     right: 10%;
   }
@@ -574,26 +574,54 @@ html {
     line-height: 1.5;
   }
 
-  .certificate-footer {
-    right: 8%;
-    bottom: 5%;
-    left: 8%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    grid-template-areas:
-      "meta seal"
-      "signature instructor"
-      "qr qr";
-    align-items: center;
-    gap: 1rem;
-    row-gap: 1.5rem;
+  .certificate-statement br {
+    display: none;
   }
 
-  .certificate-meta { grid-area: meta; }
-  .certificate-seal { grid-area: seal; }
-  .certificate-signature { grid-area: signature; }
-  .instructor-signature { grid-area: instructor; }
-  .certificate-qr { grid-area: qr; }
+  .certificate-footer {
+    right: 8%;
+    bottom: 4%;
+    left: 8%;
+    height: 340px;
+    display: block;
+  }
+
+  .certificate-meta,
+  .certificate-seal,
+  .certificate-signature,
+  .certificate-qr {
+    position: absolute;
+  }
+
+  .certificate-meta {
+    top: 0;
+    left: 0;
+    width: 46%;
+  }
+
+  .certificate-seal {
+    top: 0;
+    right: 0;
+    width: 46%;
+  }
+
+  .certificate-signature {
+    top: 145px;
+    left: 0;
+    width: 46%;
+  }
+
+  .instructor-signature {
+    top: 145px;
+    right: 0;
+    width: 46%;
+  }
+
+  .certificate-qr {
+    right: 0;
+    bottom: 0;
+    left: 0;
+  }
 
   .certificate-date {
     gap: 0.4rem;
