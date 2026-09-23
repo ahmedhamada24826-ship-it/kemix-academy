@@ -109,7 +109,7 @@ export function CertificateDocument({ certificate, showActions = true }: Certifi
           </div>
 
           <div className="certificate-signature instructor-signature">
-            <div className="signature-mark">Signature</div>
+            <div className="signature-mark">{certificate.instructorName || "Course Instructor"}</div>
             <div className="signature-rule" />
             <span>Course Instructor</span>
             <strong>{certificate.instructorName || "Course Instructor"}</strong>
