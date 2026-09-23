@@ -340,8 +340,9 @@ export default function AdminCourseDetailPage({
         maxSizeMb: 5,
         accept: ["image/png", "image/jpeg", "image/webp"],
       });
-      if (asset?.publicUrl) {
-        setCoverUrl(asset.publicUrl);
+      const uploadedCoverUrl = asset?.publicUrl || (asset?.id ? `/api/files/${asset.id}/access?redirect=1` : null);
+      if (uploadedCoverUrl) {
+        setCoverUrl(uploadedCoverUrl);
         setCoverFile(null);
         setCoverPreview(null);
         setCoverTouched(true);
