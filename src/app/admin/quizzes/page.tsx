@@ -98,7 +98,7 @@ export default function AdminQuizzesPage() {
   const loadData = async () => {
     try {
       const [coursesRes] = await Promise.all([
-        fetch("/api/courses"),
+        fetch("/api/courses", { cache: "no-store" }),
       ]);
 
       if (coursesRes.ok) {
@@ -112,12 +112,12 @@ export default function AdminQuizzesPage() {
           // Fetch quizzes for each course
           const allQuizzes: QuizItem[] = [];
           for (const course of cData.data.courses) {
-            const qRes = await fetch(`/api/courses/${course.id}/quizzes`);
+            const qRes = await fetch(`/api/courses/${course.id}/quizzes`, { cache: "no-store" });
             if (qRes.ok) {
               const qJson = await qRes.json();
               if (qJson.success && qJson.data?.quizzes) {
                 for (const q of qJson.data.quizzes) {
-                  const detailRes = await fetch(`/api/quizzes/${q.id}`);
+                  const detailRes = await fetch(`/api/quizzes/${q.id}`, { cache: "no-store" });
                   const detailJson = detailRes.ok ? await detailRes.json() : null;
                   allQuizzes.push({ ...(detailJson?.data?.quiz || q), course });
                 }
@@ -260,10 +260,10 @@ export default function AdminQuizzesPage() {
     try {
       const payload = {
         title: quizTitle.trim(),
-        description: quizDesc.trim() || undefined,
+        description: quizDesc.trim() || null,
         passingScore: Number(quizPassingScore) || 75,
-        timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : undefined,
-        maxAttempts: Number(quizMaxAttempts) || 3,
+        timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : null,
+        maxAttempts: Number.isFinite(quizMaxAttempts) ? Number(quizMaxAttempts) : 0,
         randomizeQuestions,
         randomizeAnswers,
         showResultImmediately,

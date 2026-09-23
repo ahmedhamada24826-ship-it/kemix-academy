@@ -105,6 +105,9 @@ export class S3CompatibleStorageService implements IStorageService {
   }
 
   getPublicUrl(key: string): string {
+    if (env.S3_PUBLIC_URL) {
+      return `${env.S3_PUBLIC_URL.replace(/\/$/, "")}/${key}`;
+    }
     if (env.S3_ENDPOINT) {
       return `${env.S3_ENDPOINT}/${this.publicBucket}/${key}`;
     }

@@ -21,7 +21,10 @@ const envSchema = z.object({
   S3_SECRET_ACCESS_KEY: z.string().default("minioadmin"),
   S3_PUBLIC_BUCKET: z.string().default("kemix-academy-public"),
   S3_PRIVATE_BUCKET: z.string().default("kemix-academy-protected"),
-  S3_FORCE_PATH_STYLE: z.string().transform((val) => val === "true").default("true"),
+  S3_PUBLIC_URL: z.string().url().optional().or(z.literal("")),
+  S3_FORCE_PATH_STYLE: z.string()
+    .transform((val) => val === "true")
+    .default(process.env.NODE_ENV === "production" ? "false" : "true"),
 });
 
 export type Env = z.infer<typeof envSchema>;
