@@ -55,7 +55,7 @@ export class QuizService implements IQuizService {
         allowReview: input.allowReview ?? true,
         startsAt: input.startsAt,
         endsAt: input.endsAt,
-        isPublished: input.isPublished ?? false,
+        isPublished: input.isPublished ?? true,
       },
     });
 

@@ -179,6 +179,7 @@ export default function CoursePlayerPage({
   const [courseTitle, setCourseTitle] = useState("");
   const [courseCertificatesEnabled, setCourseCertificatesEnabled] = useState(false);
   const [sections, setSections] = useState<Section[]>([]);
+  const [courseQuizzes, setCourseQuizzes] = useState<Quiz[]>([]);
   const [progress, setProgress] = useState<ProgressData | null>(null);
 
   // Active item state
@@ -227,10 +228,11 @@ export default function CoursePlayerPage({
 
     async function loadPlayerData() {
       try {
-        const [cRes, sRes, pRes] = await Promise.all([
+        const [cRes, sRes, pRes, qRes] = await Promise.all([
           fetch(`/api/courses/${courseId}`),
           fetch(`/api/courses/${courseId}/sections`),
           fetch(`/api/courses/${courseId}/progress`),
+          fetch(`/api/courses/${courseId}/quizzes`, { cache: "no-store" }),
         ]);
 
         if (cRes.ok) {
@@ -238,6 +240,21 @@ export default function CoursePlayerPage({
           if (cData.success && cData.data?.course) {
             setCourseTitle(cData.data.course.title);
             setCourseCertificatesEnabled(cData.data.course.certificatesEnabled === true);
+          }
+        }
+
+        if (qRes.ok) {
+          const qData = await qRes.json();
+          if (qData.success && Array.isArray(qData.data?.quizzes)) {
+            const details = await Promise.all(
+              qData.data.quizzes.map(async (quiz: Quiz) => {
+                const detailRes = await fetch(`/api/quizzes/${quiz.id}`, { cache: "no-store" });
+                if (!detailRes.ok) return quiz;
+                const detailJson = await detailRes.json();
+                return detailJson?.data?.quiz || quiz;
+              })
+            );
+            setCourseQuizzes(details);
           }
         }
 
@@ -350,10 +367,19 @@ export default function CoursePlayerPage({
             }
           }
 
+          const mergedQuizzes = [
+            ...(lessonData.quizzes ?? []),
+            ...courseQuizzes.filter((quiz) =>
+              (quiz.lessonId === null || quiz.lessonId === lessonId) &&
+              !(lessonData.quizzes ?? []).some((existing) => existing.id === quiz.id)
+            ),
+          ];
+
+          lessonData.quizzes = mergedQuizzes;
           setActiveLesson(lessonData);
-          if (lessonData.quizzes && lessonData.quizzes.length > 0) {
-            setActiveQuiz(lessonData.quizzes[0]);
-            loadQuizAttemptInfo(lessonData.quizzes[0].id);
+          if (mergedQuizzes.length > 0) {
+            setActiveQuiz(mergedQuizzes[0]);
+            loadQuizAttemptInfo(mergedQuizzes[0].id);
           } else {
             setActiveQuiz(null);
           }

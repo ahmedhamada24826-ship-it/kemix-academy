@@ -56,6 +56,7 @@ interface Section {
 
 interface Quiz {
   id: string;
+  lessonId?: string | null;
   title: string;
   description?: string | null;
   passingScore: number;
@@ -168,6 +169,7 @@ export default function AdminCourseDetailPage({
   const [quizModalOpen, setQuizModalOpen] = useState(false);
   const [editingQuizId, setEditingQuizId] = useState<string | null>(null);
   const [quizTitle, setQuizTitle] = useState("");
+  const [quizLessonId, setQuizLessonId] = useState<string>("");
   const [quizPassingScore, setQuizPassingScore] = useState(75);
   const [quizTimeLimit, setQuizTimeLimit] = useState<number | undefined>(20);
   const [quizStartsAt, setQuizStartsAt] = useState("");
@@ -630,6 +632,14 @@ export default function AdminCourseDetailPage({
     }
   };
 
+  const allLessons = sections.flatMap((section) =>
+    section.lessons.map((lesson) => ({
+      id: lesson.id,
+      title: lesson.title,
+      sectionTitle: section.title,
+    }))
+  );
+
   const handleAddQuiz = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!quizTitle.trim()) return;
@@ -639,16 +649,17 @@ export default function AdminCourseDetailPage({
       const res = await fetch(
         editingQuizId ? `/api/quizzes/${editingQuizId}` : `/api/courses/${courseId}/quizzes`,
         {
-        method: editingQuizId ? "PATCH" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: quizTitle.trim(),
-          ...(!editingQuizId && { lessonId: sections[0]?.lessons[0]?.id || undefined }),
-          passingScore: Number(quizPassingScore) || 75,
-          timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : null,
-          startsAt: quizStartsAt ? new Date(quizStartsAt).toISOString() : null,
-          endsAt: quizEndsAt ? new Date(quizEndsAt).toISOString() : null,
-        }),
+          method: editingQuizId ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: quizTitle.trim(),
+            lessonId: quizLessonId || null,
+            isPublished: true,
+            passingScore: Number(quizPassingScore) || 75,
+            timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : null,
+            startsAt: quizStartsAt ? new Date(quizStartsAt).toISOString() : null,
+            endsAt: quizEndsAt ? new Date(quizEndsAt).toISOString() : null,
+          }),
         }
       );
 
@@ -656,6 +667,7 @@ export default function AdminCourseDetailPage({
         setQuizModalOpen(false);
         setEditingQuizId(null);
         setQuizTitle("");
+        setQuizLessonId(allLessons[0]?.id || "");
         await refreshData();
       }
     } catch (err) {
@@ -668,6 +680,7 @@ export default function AdminCourseDetailPage({
   const openQuizCreate = () => {
     setEditingQuizId(null);
     setQuizTitle("");
+    setQuizLessonId(allLessons[0]?.id || "");
     setQuizPassingScore(75);
     setQuizTimeLimit(20);
     setQuizStartsAt("");
@@ -678,6 +691,7 @@ export default function AdminCourseDetailPage({
   const openQuizEdit = (quiz: Quiz) => {
     setEditingQuizId(quiz.id);
     setQuizTitle(quiz.title);
+    setQuizLessonId(quiz.lessonId || allLessons[0]?.id || "");
     setQuizPassingScore(quiz.passingScore);
     setQuizTimeLimit(quiz.timeLimitMinutes ?? undefined);
     setQuizStartsAt(toDateTimeLocalValue(quiz.startsAt));
@@ -944,6 +958,12 @@ export default function AdminCourseDetailPage({
                   >
                     <div>
                       <p className="font-bold text-slate-900">{quiz.title}</p>
+                      <p className="text-slate-500 text-[11px]">
+                        المحاضرة: {(() => {
+                          const selectedLesson = allLessons.find((lesson) => lesson.id === quiz.lessonId);
+                          return selectedLesson ? `${selectedLesson.sectionTitle} / ${selectedLesson.title}` : "غير مرتبط بمحاضرة";
+                        })()}
+                      </p>
                       <p className="text-slate-500 text-[11px]">
                         نسبة النجاح: {quiz.passingScore}% • زمن الاختبار: {quiz.timeLimitMinutes || "غير محدد"} دقيقة
                       </p>
@@ -1479,6 +1499,22 @@ export default function AdminCourseDetailPage({
               onChange={(e) => setQuizTitle(e.target.value)}
               required
             />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700">تحديد المحاضرة المرتبطة بهذا الاختبار</label>
+            <select
+              value={quizLessonId}
+              onChange={(e) => setQuizLessonId(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="">لا يوجد ربط مباشر بمحاضرة</option>
+              {allLessons.map((lesson) => (
+                <option key={lesson.id} value={lesson.id}>
+                  {lesson.sectionTitle} / {lesson.title}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="grid grid-cols-2 gap-3">

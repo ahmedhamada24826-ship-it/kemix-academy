@@ -138,6 +138,24 @@ describe("QuizService", () => {
       expect(quiz.id).toBe("quiz-1");
       expect(quiz.passingScore).toBe(80);
     });
+
+    it("publishes a new quiz by default so it appears to students", async () => {
+      mockPrisma.course.findUnique.mockResolvedValue({
+        id: "course-1",
+        instructorId: "inst-1",
+      });
+      mockPrisma.quiz.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
+        Promise.resolve({ id: "quiz-2", ...data })
+      );
+
+      const quiz = await quizService.createQuiz(instructorUser, {
+        courseId: "course-1",
+        title: "Data Analysis Foundations Exam",
+        passingScore: 70,
+      });
+
+      expect(quiz.isPublished).toBe(true);
+    });
   });
 
   describe("startAttempt & submitAttempt", () => {
