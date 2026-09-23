@@ -53,6 +53,8 @@ export class QuizService implements IQuizService {
         showResultImmediately: input.showResultImmediately ?? true,
         showCorrectAnswers: input.showCorrectAnswers ?? true,
         allowReview: input.allowReview ?? true,
+        startsAt: input.startsAt,
+        endsAt: input.endsAt,
         isPublished: input.isPublished ?? false,
       },
     });
@@ -116,6 +118,8 @@ export class QuizService implements IQuizService {
         ...(input.allowReview !== undefined && {
           allowReview: input.allowReview,
         }),
+        ...(input.startsAt !== undefined && { startsAt: input.startsAt }),
+        ...(input.endsAt !== undefined && { endsAt: input.endsAt }),
         ...(input.isPublished !== undefined && { isPublished: input.isPublished }),
         ...(input.isArchived !== undefined && { isArchived: input.isArchived }),
       },
@@ -384,6 +388,14 @@ export class QuizService implements IQuizService {
       throw new Error("Quiz is not published or is archived");
     }
 
+    const now = new Date();
+    if (quiz.startsAt && now < quiz.startsAt) {
+      throw new Error("Quiz is not open yet");
+    }
+    if (quiz.endsAt && now > quiz.endsAt) {
+      throw new Error("Quiz is closed");
+    }
+
     // Access check: User must be enrolled or instructor/admin
     const access = await this.accessService.canAccessCourse(user, quiz.course);
     if (!access.allowed) {
@@ -434,7 +446,6 @@ export class QuizService implements IQuizService {
       }
     }
 
-    const now = new Date();
     let expiresAt: Date | null = null;
     if (quiz.timeLimitMinutes && quiz.timeLimitMinutes > 0) {
       expiresAt = new Date(now.getTime() + quiz.timeLimitMinutes * 60 * 1000);

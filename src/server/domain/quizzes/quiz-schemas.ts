@@ -6,6 +6,11 @@ export const QuestionTypeEnum = z.enum([
   "TRUE_FALSE",
 ]);
 
+const QuizScheduleFields = {
+  startsAt: z.coerce.date().optional().nullable(),
+  endsAt: z.coerce.date().optional().nullable(),
+};
+
 export const CreateQuizSchema = z.object({
   courseId: z.string().uuid("Invalid course ID format"),
   lessonId: z.string().uuid("Invalid lesson ID format").optional().nullable(),
@@ -28,7 +33,11 @@ export const CreateQuizSchema = z.object({
   showResultImmediately: z.boolean().default(true),
   showCorrectAnswers: z.boolean().default(true),
   allowReview: z.boolean().default(true),
+  ...QuizScheduleFields,
   isPublished: z.boolean().default(false),
+}).refine((value) => !value.startsAt || !value.endsAt || value.startsAt < value.endsAt, {
+  message: "Quiz closing time must be after opening time",
+  path: ["endsAt"],
 });
 
 export const UpdateQuizSchema = z.object({
@@ -53,8 +62,12 @@ export const UpdateQuizSchema = z.object({
   showResultImmediately: z.boolean().optional(),
   showCorrectAnswers: z.boolean().optional(),
   allowReview: z.boolean().optional(),
+  ...QuizScheduleFields,
   isPublished: z.boolean().optional(),
   isArchived: z.boolean().optional(),
+}).refine((value) => !value.startsAt || !value.endsAt || value.startsAt < value.endsAt, {
+  message: "Quiz closing time must be after opening time",
+  path: ["endsAt"],
 });
 
 export const CreateQuizQuestionSchema = z.object({

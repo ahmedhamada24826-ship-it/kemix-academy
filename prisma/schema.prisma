@@ -388,6 +388,8 @@ model Quiz {
   showResultImmediately Boolean         @default(true)
   showCorrectAnswers     Boolean         @default(true)
   allowReview            Boolean         @default(true)
+  startsAt               DateTime?
+  endsAt                 DateTime?
   isPublished            Boolean         @default(false)
   isArchived             Boolean         @default(false)
   createdAt              DateTime        @default(now())

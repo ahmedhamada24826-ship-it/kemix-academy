@@ -93,6 +93,136 @@ html {
   margin-bottom: 1.25rem;
 }
 
+/* Force the original landscape composition while exporting from a phone. */
+.certificate-document.certificate-exporting {
+  width: 1536px;
+  height: 1024px;
+  min-height: 0;
+  aspect-ratio: 3 / 2;
+}
+
+.certificate-document.certificate-exporting .certificate-topline {
+  top: 3.4%;
+  right: 7.5%;
+  font-size: clamp(0.55rem, 1.05vw, 1rem);
+  letter-spacing: 0.22em;
+}
+
+.certificate-document.certificate-exporting .certificate-header {
+  top: 7%;
+  left: 7%;
+  right: 7%;
+}
+
+.certificate-document.certificate-exporting .certificate-logo-image {
+  width: clamp(15rem, 27vw, 25rem);
+  height: clamp(5rem, 9vw, 8.5rem);
+}
+
+.certificate-document.certificate-exporting .certificate-header h1 {
+  margin-top: 1.6%;
+  font-size: clamp(1.7rem, 4.3vw, 4.6rem);
+}
+
+.certificate-document.certificate-exporting .certificate-divider {
+  gap: 1.1rem;
+}
+
+.certificate-document.certificate-exporting .certificate-divider b {
+  width: 0.65rem;
+  height: 0.65rem;
+}
+
+.certificate-document.certificate-exporting .certificate-main {
+  top: 35%;
+  left: 14%;
+  right: 14%;
+}
+
+.certificate-document.certificate-exporting .certificate-kicker,
+.certificate-document.certificate-exporting .certificate-label {
+  font-size: clamp(0.55rem, 1.05vw, 1rem);
+  letter-spacing: 0.3em;
+}
+
+.certificate-document.certificate-exporting .certificate-main h2 {
+  margin-top: 1.7%;
+  font-size: clamp(2rem, 4.5vw, 5rem);
+  line-height: 1.08;
+}
+
+.certificate-document.certificate-exporting .certificate-main h3 {
+  margin-top: 1.3%;
+  font-size: clamp(1.2rem, 2.6vw, 2.7rem);
+  line-height: 1.1;
+}
+
+.certificate-document.certificate-exporting .certificate-tools {
+  margin-top: 0.8%;
+  font-size: clamp(0.8rem, 1.5vw, 1.55rem);
+  letter-spacing: 0.08em;
+}
+
+.certificate-document.certificate-exporting .certificate-statement {
+  margin-top: 1.8%;
+  font-size: clamp(0.65rem, 1.15vw, 1.15rem);
+  line-height: 1.45;
+}
+
+.certificate-document.certificate-exporting .certificate-statement br {
+  display: inline;
+}
+
+.certificate-document.certificate-exporting .certificate-footer {
+  position: absolute;
+  right: 7.5%;
+  bottom: 6.5%;
+  left: 7.5%;
+  display: grid;
+  grid-template-columns: 1.35fr 0.85fr 1.25fr 1.25fr 1fr;
+  grid-template-areas: none;
+  align-items: end;
+  gap: 2.5%;
+  height: auto;
+}
+
+.certificate-document.certificate-exporting .certificate-meta,
+.certificate-document.certificate-exporting .certificate-seal,
+.certificate-document.certificate-exporting .certificate-signature,
+.certificate-document.certificate-exporting .certificate-qr {
+  position: static;
+  width: auto;
+}
+
+.certificate-document.certificate-exporting .certificate-seal {
+  height: 9rem;
+}
+
+.certificate-document.certificate-exporting .certificate-seal-ring {
+  width: 7.5rem;
+  height: 7.5rem;
+  border-width: 3px;
+  outline-width: 5px;
+  box-shadow: 0 0 0 8px white, 0 0 0 9px #2563eb;
+}
+
+.certificate-document.certificate-exporting .certificate-seal-ring svg {
+  width: 3.5rem;
+  height: 3.5rem;
+}
+
+.certificate-document.certificate-exporting .certificate-ribbon {
+  top: 5.5rem;
+  width: 2rem;
+  height: 3.5rem;
+}
+
+.certificate-document.certificate-exporting .certificate-qr img,
+.certificate-document.certificate-exporting .certificate-qr-placeholder {
+  width: clamp(4.2rem, 7vw, 7rem);
+  height: clamp(4.2rem, 7vw, 7rem);
+}
+
 .certificate-document {
   position: relative;
   width: min(100%, 1536px);

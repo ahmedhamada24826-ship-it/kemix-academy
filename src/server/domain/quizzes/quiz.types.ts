@@ -33,6 +33,8 @@ export interface QuizDto {
   showResultImmediately: boolean;
   showCorrectAnswers: boolean;
   allowReview: boolean;
+  startsAt: Date | null;
+  endsAt: Date | null;
   isPublished: boolean;
   isArchived: boolean;
   createdAt: Date;
@@ -89,6 +91,8 @@ export interface CreateQuizInput {
   showResultImmediately?: boolean;
   showCorrectAnswers?: boolean;
   allowReview?: boolean;
+  startsAt?: Date | null;
+  endsAt?: Date | null;
   isPublished?: boolean;
 }
 
@@ -104,6 +108,8 @@ export interface UpdateQuizInput {
   showResultImmediately?: boolean;
   showCorrectAnswers?: boolean;
   allowReview?: boolean;
+  startsAt?: Date | null;
+  endsAt?: Date | null;
   isPublished?: boolean;
   isArchived?: boolean;
 }

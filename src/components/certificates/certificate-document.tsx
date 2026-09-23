@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { CalendarDays, Linkedin, Printer } from "lucide-react";
+import { toPng } from "html-to-image";
+import { CalendarDays, Download, Linkedin, Printer } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { KemixLogoIcon } from "@/components/brand/logo";
 
@@ -22,6 +23,8 @@ interface CertificateDocumentProps {
 
 export function CertificateDocument({ certificate, showActions = true }: CertificateDocumentProps) {
   const [qrCode, setQrCode] = useState<string | null>(null);
+  const certificateRef = useRef<HTMLElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
   const verificationPath = `/certificates/verify/${encodeURIComponent(certificate.certificateCode)}`;
 
   const addToLinkedIn = () => {
@@ -41,6 +44,29 @@ export function CertificateDocument({ certificate, showActions = true }: Certifi
       "_blank",
       "noopener,noreferrer"
     );
+  };
+
+  const downloadAsImage = async () => {
+    if (!certificateRef.current || isDownloading) return;
+    setIsDownloading(true);
+    certificateRef.current.classList.add("certificate-exporting");
+    try {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const dataUrl = await toPng(certificateRef.current, {
+        cacheBust: true,
+        pixelRatio: 1,
+        width: 1536,
+        height: 1024,
+        style: { width: "1536px", height: "1024px" },
+      });
+      const link = document.createElement("a");
+      link.download = `kemix-certificate-${certificate.certificateCode}.png`;
+      link.href = dataUrl;
+      link.click();
+    } finally {
+      certificateRef.current.classList.remove("certificate-exporting");
+      setIsDownloading(false);
+    }
   };
 
   useEffect(() => {
@@ -70,10 +96,20 @@ export function CertificateDocument({ certificate, showActions = true }: Certifi
             <Linkedin className="h-4 w-4" />
             <span>Add to LinkedIn</span>
           </Button>
+          <Button
+            type="button"
+            onClick={downloadAsImage}
+            disabled={isDownloading}
+            className="bg-[#0F766E] hover:bg-[#115E59]"
+            aria-label="Download certificate as image"
+          >
+            <Download className="h-4 w-4" />
+            <span>{isDownloading ? "Preparing image..." : "Download image"}</span>
+          </Button>
         </div>
       )}
 
-      <article className="certificate-document" aria-label="KEMIX Academy Certificate of Completion">
+      <article ref={certificateRef} className="certificate-document" aria-label="KEMIX Academy Certificate of Completion">
         <div className="certificate-corner certificate-corner-top" aria-hidden="true" />
         <div className="certificate-corner certificate-corner-bottom" aria-hidden="true" />
         <div className="certificate-watermark" aria-hidden="true">

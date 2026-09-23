@@ -49,11 +49,29 @@ interface QuizItem {
   allowReview: boolean;
   isPublished: boolean;
   isArchived: boolean;
+  startsAt?: string | null;
+  endsAt?: string | null;
   course?: {
     id: string;
     title: string;
   };
   questions?: QuizQuestion[];
+}
+
+function toDateTimeLocalValue(value?: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function formatSchedule(value?: string | null): string {
+  if (!value) return "غير محدد";
+  return new Date(value).toLocaleString("ar-EG", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
 }
 
 export default function AdminQuizzesPage() {
@@ -73,6 +91,8 @@ export default function AdminQuizzesPage() {
   const [quizPassingScore, setQuizPassingScore] = useState(75);
   const [quizTimeLimit, setQuizTimeLimit] = useState<number | undefined>(20);
   const [quizMaxAttempts, setQuizMaxAttempts] = useState<number>(3);
+  const [quizStartsAt, setQuizStartsAt] = useState("");
+  const [quizEndsAt, setQuizEndsAt] = useState("");
   const [randomizeQuestions, setRandomizeQuestions] = useState(true);
   const [randomizeAnswers, setRandomizeAnswers] = useState(true);
   const [showResultImmediately, setShowResultImmediately] = useState(true);
@@ -146,6 +166,8 @@ export default function AdminQuizzesPage() {
     setQuizPassingScore(75);
     setQuizTimeLimit(20);
     setQuizMaxAttempts(3);
+    setQuizStartsAt("");
+    setQuizEndsAt("");
     setRandomizeQuestions(true);
     setRandomizeAnswers(true);
     setShowResultImmediately(true);
@@ -164,6 +186,8 @@ export default function AdminQuizzesPage() {
     setQuizPassingScore(quiz.passingScore);
     setQuizTimeLimit(quiz.timeLimitMinutes ?? undefined);
     setQuizMaxAttempts(quiz.maxAttempts ?? 0);
+    setQuizStartsAt(toDateTimeLocalValue(quiz.startsAt));
+    setQuizEndsAt(toDateTimeLocalValue(quiz.endsAt));
     setRandomizeQuestions(quiz.randomizeQuestions);
     setRandomizeAnswers(quiz.randomizeAnswers);
     setShowResultImmediately(quiz.showResultImmediately);
@@ -264,6 +288,8 @@ export default function AdminQuizzesPage() {
         passingScore: Number(quizPassingScore) || 75,
         timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : null,
         maxAttempts: Number.isFinite(quizMaxAttempts) ? Number(quizMaxAttempts) : 0,
+        startsAt: quizStartsAt ? new Date(quizStartsAt).toISOString() : null,
+        endsAt: quizEndsAt ? new Date(quizEndsAt).toISOString() : null,
         randomizeQuestions,
         randomizeAnswers,
         showResultImmediately,
@@ -379,6 +405,9 @@ export default function AdminQuizzesPage() {
                   <div className="flex items-center gap-1.5 text-slate-600">
                     <Clock className="h-3.5 w-3.5 text-blue-600 flex-shrink-0" />
                     <span>{quiz.timeLimitMinutes ? `${quiz.timeLimitMinutes} دقيقة` : "غير محدد"}</span>
+                  </div>
+                  <div className="col-span-2 text-[11px] text-slate-500">
+                    {quiz.startsAt || quiz.endsAt ? `الفترة: ${formatSchedule(quiz.startsAt)} - ${formatSchedule(quiz.endsAt)}` : "بدون موعد محدد"}
                   </div>
                   <div className="flex items-center gap-1.5 text-slate-600">
                     <Shuffle className="h-3.5 w-3.5 text-purple-600 flex-shrink-0" />
@@ -526,6 +555,18 @@ export default function AdminQuizzesPage() {
                 onChange={(e) => setQuizMaxAttempts(Number(e.target.value))}
               />
             </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">يفتح الاختبار</label>
+              <Input type="datetime-local" value={quizStartsAt} onChange={(e) => setQuizStartsAt(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">يغلق الاختبار</label>
+              <Input type="datetime-local" value={quizEndsAt} min={quizStartsAt || undefined} onChange={(e) => setQuizEndsAt(e.target.value)} />
+            </div>
+            <p className="sm:col-span-2 text-[11px] text-slate-500">اترك الحقلين فارغين لجعل الاختبار متاحًا حسب حالة النشر فقط.</p>
           </div>
 
           <div className="space-y-2 bg-slate-50 p-3.5 rounded-xl border border-slate-200">

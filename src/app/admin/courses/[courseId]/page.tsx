@@ -60,6 +60,8 @@ interface Quiz {
   passingScore: number;
   timeLimitMinutes?: number | null;
   maxAttempts?: number;
+  startsAt?: string | null;
+  endsAt?: string | null;
   isPublished?: boolean;
   questions?: {
     id: string;
@@ -67,6 +69,19 @@ interface Quiz {
     points?: number;
     options?: { id?: string; text: string; isCorrect: boolean }[];
   }[];
+}
+
+function toDateTimeLocalValue(value?: string | null): string {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const offset = date.getTimezoneOffset() * 60000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+}
+
+function formatSchedule(value?: string | null): string {
+  if (!value) return "غير محدد";
+  return new Date(value).toLocaleString("ar-EG", { dateStyle: "short", timeStyle: "short" });
 }
 
 interface CourseDetail {
@@ -152,6 +167,8 @@ export default function AdminCourseDetailPage({
   const [quizTitle, setQuizTitle] = useState("");
   const [quizPassingScore, setQuizPassingScore] = useState(75);
   const [quizTimeLimit, setQuizTimeLimit] = useState<number | undefined>(20);
+  const [quizStartsAt, setQuizStartsAt] = useState("");
+  const [quizEndsAt, setQuizEndsAt] = useState("");
   const [isAddingQuiz, setIsAddingQuiz] = useState(false);
   const [questionModalOpen, setQuestionModalOpen] = useState(false);
   const [questionQuizId, setQuestionQuizId] = useState<string | null>(null);
@@ -612,6 +629,8 @@ export default function AdminCourseDetailPage({
           ...(!editingQuizId && { lessonId: sections[0]?.lessons[0]?.id || undefined }),
           passingScore: Number(quizPassingScore) || 75,
           timeLimitMinutes: quizTimeLimit ? Number(quizTimeLimit) : null,
+          startsAt: quizStartsAt ? new Date(quizStartsAt).toISOString() : null,
+          endsAt: quizEndsAt ? new Date(quizEndsAt).toISOString() : null,
         }),
         }
       );
@@ -634,6 +653,8 @@ export default function AdminCourseDetailPage({
     setQuizTitle("");
     setQuizPassingScore(75);
     setQuizTimeLimit(20);
+    setQuizStartsAt("");
+    setQuizEndsAt("");
     setQuizModalOpen(true);
   };
 
@@ -642,6 +663,8 @@ export default function AdminCourseDetailPage({
     setQuizTitle(quiz.title);
     setQuizPassingScore(quiz.passingScore);
     setQuizTimeLimit(quiz.timeLimitMinutes ?? undefined);
+    setQuizStartsAt(toDateTimeLocalValue(quiz.startsAt));
+    setQuizEndsAt(toDateTimeLocalValue(quiz.endsAt));
     setQuizModalOpen(true);
   };
 
@@ -884,6 +907,9 @@ export default function AdminCourseDetailPage({
                       <p className="font-bold text-slate-900">{quiz.title}</p>
                       <p className="text-slate-500 text-[11px]">
                         نسبة النجاح: {quiz.passingScore}% • زمن الاختبار: {quiz.timeLimitMinutes || "غير محدد"} دقيقة
+                      </p>
+                      <p className="text-slate-500 text-[11px]">
+                        الفترة: {formatSchedule(quiz.startsAt)} - {formatSchedule(quiz.endsAt)}
                       </p>
                       {quiz.questions?.map((question) => (
                         <p key={question.id} className="text-[11px] text-slate-600 mt-1">
@@ -1258,6 +1284,17 @@ export default function AdminCourseDetailPage({
                 value={lessonDuration}
                 onChange={(e) => setLessonDuration(Number(e.target.value))}
               />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">يفتح الاختبار</label>
+              <Input type="datetime-local" value={quizStartsAt} onChange={(e) => setQuizStartsAt(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">يغلق الاختبار</label>
+              <Input type="datetime-local" value={quizEndsAt} min={quizStartsAt || undefined} onChange={(e) => setQuizEndsAt(e.target.value)} />
             </div>
           </div>
 
