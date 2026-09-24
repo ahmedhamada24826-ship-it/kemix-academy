@@ -43,6 +43,7 @@ export default function AdminEnrollmentsPage() {
   const [courses, setCourses] = useState<{ id: string; title: string }[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   // Enroll modal
   const [modalOpen, setModalOpen] = useState(false);
@@ -59,10 +60,15 @@ export default function AdminEnrollmentsPage() {
         fetch("/api/courses"),
       ]);
 
-      if (enrollRes.ok) {
+      if (!enrollRes.ok) {
+        const eJson = await enrollRes.json().catch(() => null);
+        const message = eJson?.error?.message || "تعذر تحميل التسجيلات";
+        setErrorMessage(message === "Authentication required" ? "يجب تسجيل الدخول كمدير أو مدرس لرؤية بيانات التسجيلات." : message);
+      } else {
         const eJson = await enrollRes.json();
         if (eJson.success && eJson.data?.enrollments) {
           setEnrollments(eJson.data.enrollments);
+          setErrorMessage(null);
         }
       }
 
@@ -83,6 +89,7 @@ export default function AdminEnrollmentsPage() {
       }
     } catch (err) {
       console.error("Failed to load enrollments:", err);
+      setErrorMessage("تعذرت قراءة بيانات التسجيلات. حاول تسجيل الدخول مرة أخرى.");
     } finally {
       setIsLoading(false);
     }
@@ -164,61 +171,67 @@ export default function AdminEnrollmentsPage() {
       </div>
 
       {/* Enrollments Table */}
-      <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs sm:text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
-              <tr>
-                <th className="p-4">الطالب</th>
-                <th className="p-4">الكورس المسجل</th>
-                <th className="p-4">حالة التسجيل</th>
-                <th className="p-4">تاريخ التسجيل</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {isLoading ? (
+      {errorMessage ? (
+        <Card className="bg-amber-50 border-amber-200 text-amber-800 p-4 text-sm font-medium">
+          {errorMessage}
+        </Card>
+      ) : (
+        <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs sm:text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
                 <tr>
-                  <td colSpan={4} className="p-8 text-center text-slate-500 animate-pulse font-medium">
-                    جاري تحميل سجل التسجيلات...
-                  </td>
+                  <th className="p-4">الطالب</th>
+                  <th className="p-4">الكورس المسجل</th>
+                  <th className="p-4">حالة التسجيل</th>
+                  <th className="p-4">تاريخ التسجيل</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={4} className="p-8 text-center text-slate-500">
-                    لا توجد تسجيلات مسجلة.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((enr) => (
-                  <tr key={enr.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4">
-                      <p className="font-bold text-slate-900">{enr.student?.fullName}</p>
-                      <p className="text-[11px] text-slate-400 font-mono">{enr.student?.email}</p>
-                    </td>
-
-                    <td className="p-4 font-bold text-slate-800">
-                      {enr.course?.title}
-                    </td>
-
-                    <td className="p-4">
-                      <Badge
-                        variant={enr.status === "COMPLETED" ? "success" : "default"}
-                        className="text-[10px] font-bold"
-                      >
-                        {enr.status === "COMPLETED" ? "مكتمل" : "نشط"}
-                      </Badge>
-                    </td>
-
-                    <td className="p-4 text-slate-500 text-xs font-mono">
-                      {new Date(enr.enrolledAt).toLocaleDateString("ar-EG")}
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-500 animate-pulse font-medium">
+                      جاري تحميل سجل التسجيلات...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="p-8 text-center text-slate-500">
+                      لا توجد تسجيلات مسجلة.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((enr) => (
+                    <tr key={enr.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4">
+                        <p className="font-bold text-slate-900">{enr.student?.fullName}</p>
+                        <p className="text-[11px] text-slate-400 font-mono">{enr.student?.email}</p>
+                      </td>
+
+                      <td className="p-4 font-bold text-slate-800">
+                        {enr.course?.title}
+                      </td>
+
+                      <td className="p-4">
+                        <Badge
+                          variant={enr.status === "COMPLETED" ? "success" : "default"}
+                          className="text-[10px] font-bold"
+                        >
+                          {enr.status === "COMPLETED" ? "مكتمل" : "نشط"}
+                        </Badge>
+                      </td>
+
+                      <td className="p-4 text-slate-500 text-xs font-mono">
+                        {new Date(enr.enrolledAt).toLocaleDateString("ar-EG")}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
 
       {/* Manual Enrollment Dialog */}
       <Dialog open={modalOpen} onOpenChange={setModalOpen}>

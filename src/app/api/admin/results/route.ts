@@ -49,6 +49,11 @@ export async function GET(req: NextRequest) {
       },
     });
 
+    const results = attempts.map((attempt) => ({
+      ...attempt,
+      student: attempt.user,
+    }));
+
     return apiSuccess({
       stats: {
         totalAttempts,
@@ -60,6 +65,7 @@ export async function GET(req: NextRequest) {
         reviewedTasksCount,
       },
       attempts,
+      results,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Failed to fetch results";

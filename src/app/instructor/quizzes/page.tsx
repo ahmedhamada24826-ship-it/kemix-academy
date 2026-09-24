@@ -37,6 +37,7 @@ export default function InstructorQuizzesPage() {
   const [results, setResults] = useState<ResultItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadResults() {
@@ -46,10 +47,17 @@ export default function InstructorQuizzesPage() {
           const json = await res.json();
           if (json.success && json.data?.results) {
             setResults(json.data.results);
+            setErrorMessage(null);
           }
+          return;
         }
+
+        const json = await res.json().catch(() => null);
+        const message = json?.error?.message || "تعذر تحميل النتائج";
+        setErrorMessage(message === "Authentication required" ? "يجب تسجيل الدخول كمسؤول أو مدرس لرؤية النتائج." : message);
       } catch (err) {
         console.error("Failed to load results:", err);
+        setErrorMessage("تعذرت قراءة نتائج الاختبارات. حاول تسجيل الدخول مرة أخرى.");
       } finally {
         setIsLoading(false);
       }
@@ -89,79 +97,85 @@ export default function InstructorQuizzesPage() {
       </div>
 
       {/* Table */}
-      <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-right text-xs sm:text-sm">
-            <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
-              <tr>
-                <th className="p-4">الطالب</th>
-                <th className="p-4">الاختبار والكورس</th>
-                <th className="p-4">المحاولة</th>
-                <th className="p-4">الدرجة</th>
-                <th className="p-4">النتيجة</th>
-                <th className="p-4">الوقت</th>
-                <th className="p-4">التاريخ</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {isLoading ? (
+      {errorMessage ? (
+        <Card className="bg-amber-50 border-amber-200 text-amber-800 p-4 text-sm font-medium">
+          {errorMessage}
+        </Card>
+      ) : (
+        <Card className="bg-white border-slate-200 shadow-sm overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-right text-xs sm:text-sm">
+              <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[11px] tracking-wider">
                 <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500 animate-pulse font-medium">
-                    جاري تحميل النتائج...
-                  </td>
+                  <th className="p-4">الطالب</th>
+                  <th className="p-4">الاختبار والكورس</th>
+                  <th className="p-4">المحاولة</th>
+                  <th className="p-4">الدرجة</th>
+                  <th className="p-4">النتيجة</th>
+                  <th className="p-4">الوقت</th>
+                  <th className="p-4">التاريخ</th>
                 </tr>
-              ) : filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={7} className="p-8 text-center text-slate-500">
-                    لا توجد محاولات اختبار مسجلة بعد.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((item) => (
-                  <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4">
-                      <p className="font-bold text-slate-900">{item.student?.fullName}</p>
-                      <p className="text-[11px] text-slate-400 font-mono">{item.student?.email}</p>
-                    </td>
-
-                    <td className="p-4">
-                      <p className="font-bold text-slate-800">{item.quiz?.title}</p>
-                      <p className="text-[11px] text-slate-400">{item.quiz?.course?.title}</p>
-                    </td>
-
-                    <td className="p-4">
-                      <Badge variant="outline" className="text-[10px] font-mono">
-                        #{item.attemptNumber || 1}
-                      </Badge>
-                    </td>
-
-                    <td className="p-4 font-black text-slate-900">
-                      {item.score}%
-                    </td>
-
-                    <td className="p-4">
-                      <Badge
-                        variant={item.passed ? "success" : "destructive"}
-                        className="text-[10px] font-bold"
-                      >
-                        {item.passed ? "ناجح" : "راسب"}
-                      </Badge>
-                    </td>
-
-                    <td className="p-4 text-slate-600 font-mono text-xs">
-                      {Math.floor((item.timeSpentSeconds || 0) / 60)} دقيقة
-                    </td>
-
-                    <td className="p-4 text-slate-500 text-xs font-mono">
-                      {new Date(item.createdAt).toLocaleDateString("ar-EG")}
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {isLoading ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-500 animate-pulse font-medium">
+                      جاري تحميل النتائج...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </Card>
+                ) : filtered.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-slate-500">
+                      لا توجد محاولات اختبار مسجلة بعد.
+                    </td>
+                  </tr>
+                ) : (
+                  filtered.map((item) => (
+                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4">
+                        <p className="font-bold text-slate-900">{item.student?.fullName}</p>
+                        <p className="text-[11px] text-slate-400 font-mono">{item.student?.email}</p>
+                      </td>
+
+                      <td className="p-4">
+                        <p className="font-bold text-slate-800">{item.quiz?.title}</p>
+                        <p className="text-[11px] text-slate-400">{item.quiz?.course?.title}</p>
+                      </td>
+
+                      <td className="p-4">
+                        <Badge variant="outline" className="text-[10px] font-mono">
+                          #{item.attemptNumber || 1}
+                        </Badge>
+                      </td>
+
+                      <td className="p-4 font-black text-slate-900">
+                        {item.score}%
+                      </td>
+
+                      <td className="p-4">
+                        <Badge
+                          variant={item.passed ? "success" : "destructive"}
+                          className="text-[10px] font-bold"
+                        >
+                          {item.passed ? "ناجح" : "راسب"}
+                        </Badge>
+                      </td>
+
+                      <td className="p-4 text-slate-600 font-mono text-xs">
+                        {Math.floor((item.timeSpentSeconds || 0) / 60)} دقيقة
+                      </td>
+
+                      <td className="p-4 text-slate-500 text-xs font-mono">
+                        {new Date(item.createdAt).toLocaleDateString("ar-EG")}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      )}
     </div>
   );
 }
