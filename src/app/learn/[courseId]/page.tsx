@@ -599,6 +599,15 @@ export default function CoursePlayerPage({
 
   // 7. Claim Certificate
   const handleClaimCertificate = async () => {
+    const hasUnpassedCourseQuiz =
+      courseQuizzes.length > 0 &&
+      courseQuizzes.some((quiz) => quizAttemptInfo[quiz.id]?.passed !== true);
+
+    if (hasUnpassedCourseQuiz) {
+      alert("لا يمكنك استلام الشهادة إلا بعد اجتياز جميع الاختبارات المطلوبة في الكورس.");
+      return;
+    }
+
     setIsClaimingCert(true);
     try {
       const res = await fetch("/api/certificates", {
@@ -609,9 +618,12 @@ export default function CoursePlayerPage({
       const json = await res.json();
       if (res.ok && json.success && json.data?.certificate) {
         setClaimedCertCode(json.data.certificate.certificateCode);
+      } else if (!res.ok) {
+        alert(json?.error?.message || "لا يمكنك استلام الشهادة حالياً.");
       }
     } catch (err) {
       console.error("Failed to claim certificate:", err);
+      alert("فشل استلام الشهادة. يرجى المحاولة مرة أخرى.");
     } finally {
       setIsClaimingCert(false);
     }
