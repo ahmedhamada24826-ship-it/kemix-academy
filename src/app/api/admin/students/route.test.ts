@@ -69,7 +69,7 @@ describe("API /api/admin/students", () => {
           _count: { sections: 4 },
         },
       },
-    ] as any);
+    ] as unknown as Awaited<ReturnType<typeof prisma.enrollment.findMany>>);
 
     vi.mocked(prisma.lessonProgress.count).mockResolvedValue(2);
     vi.mocked(prisma.lesson.count).mockResolvedValue(4);

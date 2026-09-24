@@ -29,8 +29,8 @@ export async function GET(req: NextRequest) {
 
     if (user.role === "ADMIN" || (user.role === "INSTRUCTOR" && parseResult.data.courseId)) {
       const result = await enrollmentService.listAllEnrollments(user, parseResult.data);
-      const normalizedEnrollments = (result.enrollments ?? []).map((enrollment: any) => {
-        const student = enrollment.user ?? enrollment.student ?? null;
+      const normalizedEnrollments = (result.enrollments ?? []).map((enrollment) => {
+        const student = enrollment.user ?? null;
         const course = enrollment.course ?? null;
 
         return {
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
             : null,
           user: student,
           course: course,
-          studentId: enrollment.userId ?? enrollment.studentId ?? student?.id ?? null,
+          studentId: enrollment.userId ?? student?.id ?? null,
         };
       });
 
@@ -53,9 +53,9 @@ export async function GET(req: NextRequest) {
 
     // Default to user's own enrollments
     const result = await enrollmentService.listUserEnrollments(user.id, parseResult.data);
-    const normalizedOwnEnrollments = (result.enrollments ?? []).map((enrollment: any) => {
+    const normalizedOwnEnrollments = (result.enrollments ?? []).map((enrollment) => {
       const course = enrollment.course ?? null;
-      const student = enrollment.user ?? enrollment.student ?? null;
+      const student = enrollment.user ?? null;
 
       return {
         ...enrollment,
@@ -68,7 +68,7 @@ export async function GET(req: NextRequest) {
           : null,
         user: student,
         course,
-        studentId: enrollment.userId ?? enrollment.studentId ?? student?.id ?? null,
+        studentId: enrollment.userId ?? student?.id ?? null,
       };
     });
 
