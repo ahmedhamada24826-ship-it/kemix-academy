@@ -21,6 +21,21 @@ describe("ProgressService", () => {
       count: ReturnType<typeof vi.fn>;
       findMany: ReturnType<typeof vi.fn>;
     };
+    task: {
+      count: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
+    };
+    taskSubmission: {
+      count: ReturnType<typeof vi.fn>;
+      findFirst: ReturnType<typeof vi.fn>;
+    };
+    quiz: {
+      findMany: ReturnType<typeof vi.fn>;
+    };
+    quizAttempt: {
+      findFirst: ReturnType<typeof vi.fn>;
+      findMany: ReturnType<typeof vi.fn>;
+    };
     course: {
       findUnique: ReturnType<typeof vi.fn>;
     };
@@ -56,10 +71,29 @@ describe("ProgressService", () => {
         count: vi.fn(),
         findMany: vi.fn(),
       },
+      task: {
+        count: vi.fn(),
+        findMany: vi.fn(),
+      },
+      taskSubmission: {
+        count: vi.fn(),
+        findFirst: vi.fn(),
+      },
+      quiz: {
+        findMany: vi.fn(),
+      },
+      quizAttempt: {
+        findFirst: vi.fn(),
+        findMany: vi.fn(),
+      },
       course: {
         findUnique: vi.fn(),
       },
     };
+
+    mockPrisma.task.findMany.mockResolvedValue([]);
+    mockPrisma.quiz.findMany.mockResolvedValue([]);
+    mockPrisma.quizAttempt.findMany.mockResolvedValue([]);
 
     mockAccessService = {
       canManageCourse: vi.fn(),
@@ -97,6 +131,29 @@ describe("ProgressService", () => {
       expect(result.completed).toBe(true);
       expect(result.progressPercent).toBe(100);
       expect(result.completedAt).toBeInstanceOf(Date);
+    });
+
+    it("rejects progress update if a required task or quiz has not been completed", async () => {
+      mockPrisma.lesson.findUnique.mockResolvedValue({
+        id: "lesson-1",
+        section: { courseId: "course-1" },
+      });
+      mockPrisma.enrollment.findUnique.mockResolvedValue({
+        id: "enr-1",
+        status: "ACTIVE",
+      });
+      mockPrisma.lessonProgress.findUnique.mockResolvedValue(null);
+      mockPrisma.task.count.mockResolvedValue(1);
+      mockPrisma.taskSubmission.count.mockResolvedValue(0);
+      mockPrisma.quiz.findMany.mockResolvedValue([{ id: "quiz-1" }]);
+      mockPrisma.quizAttempt.findFirst.mockResolvedValue(null);
+
+      await expect(
+        progressService.updateLessonProgress(studentUser.id, "lesson-1", {
+          progressPercent: 100,
+          completed: true,
+        })
+      ).rejects.toThrow("before marking this lesson as complete");
     });
 
     it("rejects progress update if user is not enrolled", async () => {

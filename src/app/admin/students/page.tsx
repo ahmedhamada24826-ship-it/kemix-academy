@@ -99,15 +99,19 @@ export default function AdminStudentsPage() {
   };
 
   const filteredStudents = students.filter((s) => {
+    const fullName = s.fullName || "";
+    const email = s.email || "";
+    const phone = s.phone || "";
+
     const matchesSearch =
-      s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (s.phone && s.phone.includes(searchQuery));
+      fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      phone.toLowerCase().includes(searchQuery.toLowerCase());
 
     if (!matchesSearch) return false;
 
     if (selectedCourseFilter !== "ALL") {
-      return s.enrollments?.some((e) => e.courseId === selectedCourseFilter);
+      return s.enrollments?.some((e) => e.courseId === selectedCourseFilter) ?? false;
     }
 
     return true;
@@ -194,54 +198,60 @@ export default function AdminStudentsPage() {
                   </td>
                 </tr>
               ) : (
-                filteredStudents.map((student) => (
-                  <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-[#0B2D5B] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-                          {student.fullName.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900">{student.fullName}</p>
-                          {student.phone && (
-                            <p className="text-[11px] text-slate-400 font-mono">{student.phone}</p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
+                filteredStudents.map((student) => {
+                  const fullName = student.fullName || "طالب غير مسجل";
+                  const email = student.email || "";
+                  const avatarLetter = fullName.charAt(0).toUpperCase();
 
-                    <td className="p-4 font-mono text-xs text-slate-600">
-                      {student.email}
-                    </td>
-
-                    <td className="p-4">
-                      <Badge variant="outline" className="text-xs font-semibold">
-                        {student.enrollmentsCount} كورس
-                      </Badge>
-                    </td>
-
-                    <td className="p-4">
-                      <div className="w-32 space-y-1">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-700">
-                          <span>{Math.round(student.averageProgress || 0)}%</span>
-                          {student.averageProgress >= 100 && (
-                            <CheckCircle2 className="h-3 w-3 text-emerald-600" />
-                          )}
+                  return (
+                    <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-full bg-[#0B2D5B] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            {avatarLetter}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{fullName}</p>
+                            {student.phone && (
+                              <p className="text-[11px] text-slate-400 font-mono">{student.phone}</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-blue-600 rounded-full transition-all"
-                            style={{ width: `${Math.min(100, Math.round(student.averageProgress || 0))}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="p-4 text-slate-500 text-xs font-mono">
-                      {new Date(student.createdAt).toLocaleDateString("ar-EG")}
-                    </td>
-                  </tr>
-                ))
+                      <td className="p-4 font-mono text-xs text-slate-600">
+                        {email}
+                      </td>
+
+                      <td className="p-4">
+                        <Badge variant="outline" className="text-xs font-semibold">
+                          {student.enrollmentsCount} كورس
+                        </Badge>
+                      </td>
+
+                      <td className="p-4">
+                        <div className="w-32 space-y-1">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-700">
+                            <span>{Math.round(student.averageProgress || 0)}%</span>
+                            {student.averageProgress >= 100 && (
+                              <CheckCircle2 className="h-3 w-3 text-emerald-600" />
+                            )}
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-600 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, Math.round(student.averageProgress || 0))}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-4 text-slate-500 text-xs font-mono">
+                        {new Date(student.createdAt).toLocaleDateString("ar-EG")}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

@@ -46,11 +46,15 @@ export default function InstructorStudentsPage() {
     loadStudents();
   }, []);
 
-  const filtered = students.filter(
-    (s) =>
-      s.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      s.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filtered = students.filter((s) => {
+    const fullName = s.fullName || "";
+    const email = s.email || "";
+
+    return (
+      fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+  });
 
   return (
     <div className="space-y-8" dir="rtl">
@@ -104,51 +108,57 @@ export default function InstructorStudentsPage() {
                   </td>
                 </tr>
               ) : (
-                filtered.map((student) => (
-                  <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="p-4">
-                      <div className="flex items-center gap-2.5">
-                        <div className="h-8 w-8 rounded-full bg-[#0B2D5B] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
-                          {student.fullName.charAt(0)}
-                        </div>
-                        <div>
-                          <p className="font-bold text-slate-900">{student.fullName}</p>
-                          {student.phone && (
-                            <p className="text-[11px] text-slate-400 font-mono">{student.phone}</p>
-                          )}
-                        </div>
-                      </div>
-                    </td>
+                filtered.map((student) => {
+                  const fullName = student.fullName || "طالب غير مسجل";
+                  const email = student.email || "";
+                  const avatarLetter = fullName.charAt(0).toUpperCase();
 
-                    <td className="p-4 font-mono text-xs text-slate-600">
-                      {student.email}
-                    </td>
-
-                    <td className="p-4">
-                      <Badge variant="outline" className="text-xs font-semibold">
-                        {student.enrollmentsCount} كورس
-                      </Badge>
-                    </td>
-
-                    <td className="p-4">
-                      <div className="w-32 space-y-1">
-                        <div className="flex items-center justify-between text-[10px] font-bold text-slate-700">
-                          <span>{Math.round(student.averageProgress || 0)}%</span>
+                  return (
+                    <tr key={student.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="h-8 w-8 rounded-full bg-[#0B2D5B] text-white flex items-center justify-center font-bold text-xs flex-shrink-0">
+                            {avatarLetter}
+                          </div>
+                          <div>
+                            <p className="font-bold text-slate-900">{fullName}</p>
+                            {student.phone && (
+                              <p className="text-[11px] text-slate-400 font-mono">{student.phone}</p>
+                            )}
+                          </div>
                         </div>
-                        <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-blue-600 rounded-full transition-all"
-                            style={{ width: `${Math.min(100, Math.round(student.averageProgress || 0))}%` }}
-                          />
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td className="p-4 text-slate-500 text-xs font-mono">
-                      {new Date(student.createdAt).toLocaleDateString("ar-EG")}
-                    </td>
-                  </tr>
-                ))
+                      <td className="p-4 font-mono text-xs text-slate-600">
+                        {email}
+                      </td>
+
+                      <td className="p-4">
+                        <Badge variant="outline" className="text-xs font-semibold">
+                          {student.enrollmentsCount} كورس
+                        </Badge>
+                      </td>
+
+                      <td className="p-4">
+                        <div className="w-32 space-y-1">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-700">
+                            <span>{Math.round(student.averageProgress || 0)}%</span>
+                          </div>
+                          <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <div
+                              className="h-full bg-blue-600 rounded-full transition-all"
+                              style={{ width: `${Math.min(100, Math.round(student.averageProgress || 0))}%` }}
+                            />
+                          </div>
+                        </div>
+                      </td>
+
+                      <td className="p-4 text-slate-500 text-xs font-mono">
+                        {new Date(student.createdAt).toLocaleDateString("ar-EG")}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>

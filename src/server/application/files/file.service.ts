@@ -21,6 +21,10 @@ export class FileService implements IFileService {
     private readonly accessService: CourseAccessService = courseAccessService
   ) {}
 
+  private isExternalUrl(value: string): boolean {
+    return /^https?:\/\//i.test(value.trim());
+  }
+
   private async validateAttachmentScope(courseId?: string, lessonId?: string): Promise<void> {
     if (lessonId && !courseId) {
       throw new Error("courseId is required when attaching a file to a lesson");
@@ -116,10 +120,13 @@ export class FileService implements IFileService {
       }
     }
 
-    const bucketType = input.visibility === "PUBLIC" ? "public" : "protected";
-    const objectExists = await this.storage.checkObjectExists(bucketType, input.storageKey);
-    if (!objectExists) {
-      throw new Error("Uploaded object was not found in storage; file was not registered");
+    const isExternalLink = this.isExternalUrl(input.storageKey);
+    if (!isExternalLink) {
+      const bucketType = input.visibility === "PUBLIC" ? "public" : "protected";
+      const objectExists = await this.storage.checkObjectExists(bucketType, input.storageKey);
+      if (!objectExists) {
+        throw new Error("Uploaded object was not found in storage; file was not registered");
+      }
     }
 
     const asset = await this.prisma.fileAsset.create({
@@ -169,6 +176,13 @@ export class FileService implements IFileService {
 
     if (!asset) {
       throw new Error("File asset not found");
+    }
+
+    if (this.isExternalUrl(asset.storageKey)) {
+      return {
+        url: asset.storageKey,
+        isDirectPublic: true,
+      };
     }
 
     // If file is public, return public URL directly

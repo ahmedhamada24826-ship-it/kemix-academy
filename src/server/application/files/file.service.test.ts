@@ -166,6 +166,43 @@ describe("FileService", () => {
       expect(mockPrisma.fileAsset.create).not.toHaveBeenCalled();
     });
 
+    it("registers an external Drive link as a lesson file without storage validation", async () => {
+      mockPrisma.course.findUnique.mockResolvedValue({
+        id: "course-1",
+        instructorId: instructorUser.id,
+      });
+      mockPrisma.lesson.findUnique.mockResolvedValue({
+        section: { courseId: "course-1" },
+      });
+      mockPrisma.fileAsset.create.mockResolvedValue({
+        id: "file-link-1",
+        storageKey: "https://drive.google.com/file/d/abc/view",
+        originalName: "ملف المحاضرة.pdf",
+        mimeType: "application/pdf",
+        size: 1,
+        category: "PDF",
+        visibility: "PUBLIC",
+        uploadedById: instructorUser.id,
+        courseId: "course-1",
+        lessonId: "lesson-1",
+      });
+
+      const asset = await fileService.registerFileAsset(instructorUser, {
+        storageKey: "https://drive.google.com/file/d/abc/view",
+        originalName: "ملف المحاضرة.pdf",
+        mimeType: "application/pdf",
+        size: 1,
+        category: "PDF",
+        visibility: "PUBLIC",
+        courseId: "course-1",
+        lessonId: "lesson-1",
+      });
+
+      expect(asset.storageKey).toBe("https://drive.google.com/file/d/abc/view");
+      expect(mockStorage.checkObjectExists).not.toHaveBeenCalled();
+      expect(mockPrisma.fileAsset.create).toHaveBeenCalled();
+    });
+
     it("rejects a lesson attached to another course", async () => {
       mockPrisma.lesson.findUnique.mockResolvedValue({
         section: { courseId: "course-2" },

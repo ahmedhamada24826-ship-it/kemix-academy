@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
             id: true,
             fullName: true,
             email: true,
+            role: true,
             avatarUrl: true,
             status: true,
             createdAt: true,
@@ -66,83 +67,136 @@ export async function GET(req: NextRequest) {
     });
 
     // Enhance with progress, quiz results, and certificates
-    const studentData = await Promise.all(
-      enrollments.map(async (enr) => {
-        const [completedLessonsCount, totalPublishedLessons, quizAttempts, taskSubmissions, cert] =
-          await Promise.all([
-            prisma.lessonProgress.count({
-              where: {
+    const groupedStudents = new Map<
+      string,
+      {
+        user: (typeof enrollments)[number]["user"];
+        enrollments: Array<{
+          courseId: string;
+          courseTitle: string;
+          status: string;
+          progressPercent: number;
+          enrolledAt: Date;
+        }>;
+      }
+    >();
+
+    for (const enr of enrollments) {
+      const userId = enr.userId;
+      const entry = groupedStudents.get(userId) ?? {
+        user: enr.user,
+        enrollments: [],
+      };
+
+      const [completedLessonsCount, totalPublishedLessons, quizAttempts, taskSubmissions, cert] =
+        await Promise.all([
+          prisma.lessonProgress.count({
+            where: {
+              userId: enr.userId,
+              courseId: enr.courseId,
+              completed: true,
+            },
+          }),
+          prisma.lesson.count({
+            where: {
+              section: { courseId: enr.courseId },
+              isPublished: true,
+            },
+          }),
+          prisma.quizAttempt.findMany({
+            where: {
+              userId: enr.userId,
+              quiz: { courseId: enr.courseId },
+            },
+            select: {
+              score: true,
+              passed: true,
+              status: true,
+            },
+          }),
+          prisma.taskSubmission.count({
+            where: {
+              userId: enr.userId,
+              task: { courseId: enr.courseId },
+            },
+          }),
+          prisma.certificate.findUnique({
+            where: {
+              userId_courseId: {
                 userId: enr.userId,
                 courseId: enr.courseId,
-                completed: true,
               },
-            }),
-            prisma.lesson.count({
-              where: {
-                section: { courseId: enr.courseId },
-                isPublished: true,
-              },
-            }),
-            prisma.quizAttempt.findMany({
-              where: {
-                userId: enr.userId,
-                quiz: { courseId: enr.courseId },
-              },
-              select: {
-                score: true,
-                passed: true,
-                status: true,
-              },
-            }),
-            prisma.taskSubmission.count({
-              where: {
-                userId: enr.userId,
-                task: { courseId: enr.courseId },
-              },
-            }),
-            prisma.certificate.findUnique({
-              where: {
-                userId_courseId: {
-                  userId: enr.userId,
-                  courseId: enr.courseId,
-                },
-              },
-              select: {
-                certificateCode: true,
-                issuedAt: true,
-              },
-            }),
-          ]);
+            },
+            select: {
+              certificateCode: true,
+              issuedAt: true,
+            },
+          }),
+        ]);
 
-        const progressPercent =
-          totalPublishedLessons > 0
-            ? Math.round((completedLessonsCount / totalPublishedLessons) * 100)
-            : 0;
+      const progressPercent =
+        totalPublishedLessons > 0
+          ? Math.round((completedLessonsCount / totalPublishedLessons) * 100)
+          : 0;
 
-        const passedQuizzesCount = quizAttempts.filter((q) => q.passed).length;
-        const totalQuizzesCount = quizAttempts.length;
+      entry.enrollments.push({
+        courseId: enr.courseId,
+        courseTitle: enr.course.title,
+        status: enr.status,
+        progressPercent,
+        enrolledAt: enr.enrolledAt,
+      });
 
-        return {
-          id: enr.id,
-          userId: enr.userId,
-          studentName: enr.user.fullName,
-          studentEmail: enr.user.email,
-          courseId: enr.courseId,
-          courseTitle: enr.course.title,
-          enrollmentStatus: enr.status,
-          enrollmentType: enr.enrollmentType,
-          enrolledAt: enr.enrolledAt,
-          progressPercent,
-          completedLessonsCount,
-          totalLessonsCount: totalPublishedLessons,
-          quizzesPassed: passedQuizzesCount,
-          totalQuizAttempts: totalQuizzesCount,
-          taskSubmissionsCount: taskSubmissions,
-          hasCertificate: !!cert,
-          certificateCode: cert?.certificateCode || null,
-        };
-      })
-    );
+      groupedStudents.set(userId, entry);
+    }
+
+    const studentData = Array.from(groupedStudents.values()).map(({ user, enrollments: userEnrollments }) => {
+      const fullName = user.fullName?.trim() || "Student";
+      const email = user.email?.trim() || "";
+      const averageProgress =
+        userEnrollments.length > 0
+          ? Math.round(
+              userEnrollments.reduce((sum, item) => sum + item.progressPercent, 0) / userEnrollments.length
+            )
+          : 0;
+
+      const firstEnrollment = userEnrollments[0];
+
+      return {
+        id: user.id,
+        userId: user.id,
+        fullName,
+        email,
+        phone: null,
+        role: user.role || "STUDENT",
+        createdAt: user.createdAt,
+        enrollmentsCount: userEnrollments.length,
+        completedCoursesCount: userEnrollments.filter((item) => item.status === "COMPLETED").length,
+        averageProgress,
+        enrollments: userEnrollments.map((item) => ({
+          courseId: item.courseId,
+          courseTitle: item.courseTitle,
+          status: item.status,
+          progressPercentage: item.progressPercent,
+          enrolledAt: item.enrolledAt,
+        })),
+        studentName: fullName,
+        studentEmail: email,
+        courseId: firstEnrollment?.courseId ?? null,
+        courseTitle: firstEnrollment?.courseTitle ?? "",
+        enrollmentStatus: firstEnrollment?.status ?? null,
+        enrollmentType: "SELF",
+        enrolledAt: firstEnrollment?.enrolledAt ?? user.createdAt,
+        progressPercent: averageProgress,
+        completedLessonsCount: 0,
+        totalLessonsCount: 0,
+        quizzesPassed: 0,
+        totalQuizAttempts: 0,
+        taskSubmissionsCount: 0,
+        hasCertificate: false,
+        certificateCode: null,
+      };
+    });
 
     return apiSuccess({ students: studentData, total: studentData.length });
   } catch (error: unknown) {

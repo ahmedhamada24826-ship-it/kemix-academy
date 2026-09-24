@@ -73,6 +73,38 @@ export class CertificateService implements ICertificateService {
       );
     }
 
+    const publishedQuizzes = await this.prisma.quiz.findMany({
+      where: {
+        courseId,
+        isPublished: true,
+        isArchived: false,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (publishedQuizzes.length > 0) {
+      const quizChecks = await Promise.all(
+        publishedQuizzes.map(async (quiz) => {
+          const passedAttempt = await this.prisma.quizAttempt.findFirst({
+            where: {
+              quizId: quiz.id,
+              userId,
+              passed: true,
+            },
+            select: { id: true },
+          });
+
+          return !!passedAttempt;
+        })
+      );
+
+      if (quizChecks.some((passed) => !passed)) {
+        throw new Error("Course requirements not met: all published quizzes must be passed before earning a certificate");
+      }
+    }
+
     let certificateCode = this.generateCertificateCode();
     let isUnique = false;
     let attempts = 0;

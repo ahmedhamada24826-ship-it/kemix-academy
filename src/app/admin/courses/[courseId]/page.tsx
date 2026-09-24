@@ -164,6 +164,8 @@ export default function AdminCourseDetailPage({
   const [isSavingLesson, setIsSavingLesson] = useState(false);
   const [lessonUploadError, setLessonUploadError] = useState<string | null>(null);
   const [lessonFileAsset, setLessonFileAsset] = useState<{ id: string; originalName: string } | null>(null);
+  const [lessonDriveUrl, setLessonDriveUrl] = useState("");
+  const [lessonDriveName, setLessonDriveName] = useState("");
 
   // Add quiz modal
   const [quizModalOpen, setQuizModalOpen] = useState(false);
@@ -205,6 +207,8 @@ export default function AdminCourseDetailPage({
     setIsFreePreview(selectedLesson.isFreePreview);
     setLessonContent(selectedLesson.content || "");
     setLessonFileAsset(null);
+    setLessonDriveUrl("");
+    setLessonDriveName("");
     setLessonUploadError(null);
     setLessonEditOpen(true);
   };
@@ -277,6 +281,52 @@ export default function AdminCourseDetailPage({
       setLessonFileAsset({ id: asset.id, originalName: asset.originalName });
     }
     await refreshData();
+  };
+
+  const handleAddLessonDriveLink = async () => {
+    if (!editingLesson) return;
+    const url = lessonDriveUrl.trim();
+    if (!url) {
+      setLessonUploadError("يرجى إدخال رابط ملف Drive أو رابط خارجي");
+      return;
+    }
+    if (!/^https?:\/\//i.test(url)) {
+      setLessonUploadError("الرابط يجب أن يبدأ بـ http:// أو https://");
+      return;
+    }
+
+    try {
+      setLessonUploadError(null);
+      const res = await fetch("/api/files/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          storageKey: url,
+          originalName: lessonDriveName.trim() || "Drive Link",
+          mimeType: "application/octet-stream",
+          size: 1,
+          category: "DOCUMENT",
+          visibility: "PUBLIC",
+          courseId,
+          lessonId: editingLesson.id,
+        }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || !json.success) {
+        throw new Error(json.error?.message || "فشل ربط رابط الملف");
+      }
+
+      setLessonFileAsset({
+        id: json.data.fileAsset.id,
+        originalName: json.data.fileAsset.originalName,
+      });
+      setLessonDriveUrl("");
+      setLessonDriveName("");
+      await refreshData();
+    } catch (err) {
+      setLessonUploadError(err instanceof Error ? err.message : "فشل ربط رابط الملف");
+    }
   };
 
   const openQuestionEditor = (quizId: string, question?: NonNullable<Quiz["questions"]>[number]) => {
@@ -1471,6 +1521,26 @@ export default function AdminCourseDetailPage({
           <label className="block text-xs font-bold text-slate-700">إضافة ملف للدرس
             <input type="file" accept=".pdf,.doc,.docx,.xlsx,.xls,.csv,.zip" className="mt-1 block w-full text-xs" onChange={(e) => { const file = e.target.files?.[0]; if (file) void handleLessonUpload(file, file.type === "application/pdf" ? "PDF" : "DOCUMENT"); e.currentTarget.value = ""; }} />
           </label>
+
+          <div className="space-y-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+            <label className="block text-xs font-bold text-slate-700">رابط Google Drive / ملف خارجي</label>
+            <Input
+              value={lessonDriveUrl}
+              onChange={(e) => setLessonDriveUrl(e.target.value)}
+              placeholder="https://drive.google.com/file/d/..."
+              className="font-mono text-xs dir-ltr text-left"
+            />
+            <Input
+              value={lessonDriveName}
+              onChange={(e) => setLessonDriveName(e.target.value)}
+              placeholder="اسم الملف الذي سيظهر للطلاب"
+              className="text-xs"
+            />
+            <Button type="button" variant="outline" className="w-full" onClick={() => void handleAddLessonDriveLink()}>
+              ربط رابط الملف
+            </Button>
+          </div>
+
           {editingLesson?.files?.map((file) => <p key={file.id} className="text-xs text-slate-600">ملف مرتبط: {file.originalName}</p>)}
           {lessonFileAsset && <p className="text-xs text-emerald-700">تم ربط الملف: {lessonFileAsset.originalName}</p>}
           <label className="flex items-center gap-2 text-xs font-bold text-slate-700"><input type="checkbox" checked={editingLesson?.isFreePreview || false} onChange={(e) => setIsFreePreview(e.target.checked)} /> معاينة مجانية</label>

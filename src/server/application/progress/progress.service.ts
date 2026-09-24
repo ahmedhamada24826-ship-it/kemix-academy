@@ -16,6 +16,56 @@ export class ProgressService implements IProgressService {
     private readonly accessService: CourseAccessService = courseAccessService
   ) {}
 
+  private async validateLessonCompletionRequirements(
+    userId: string,
+    lessonId: string
+  ): Promise<void> {
+    const [requiredTasks, requiredQuizzes] = await Promise.all([
+      this.prisma.task.findMany({
+        where: { lessonId, isPublished: true, isArchived: false },
+        select: { id: true },
+      }),
+      this.prisma.quiz.findMany({
+        where: { lessonId, isPublished: true, isArchived: false },
+        select: { id: true },
+      }),
+    ]);
+
+    if (requiredTasks.length > 0) {
+      const taskSubmissionCount = await this.prisma.taskSubmission.count({
+        where: {
+          userId,
+          taskId: { in: requiredTasks.map((task) => task.id) },
+        },
+      });
+
+      if (taskSubmissionCount < requiredTasks.length) {
+        throw new Error(
+          "You must submit all required tasks before marking this lesson as complete."
+        );
+      }
+    }
+
+    if (requiredQuizzes.length > 0) {
+      const passedQuizAttempts = await this.prisma.quizAttempt.findMany({
+        where: {
+          userId,
+          quizId: { in: requiredQuizzes.map((quiz) => quiz.id) },
+          passed: true,
+        },
+        select: { quizId: true },
+      });
+
+      const passedQuizIds = new Set(passedQuizAttempts.map((attempt) => attempt.quizId));
+
+      if (passedQuizIds.size < requiredQuizzes.length) {
+        throw new Error(
+          "You must pass the required quiz before marking this lesson as complete."
+        );
+      }
+    }
+  }
+
   async updateLessonProgress(
     userId: string,
     lessonId: string,
@@ -61,6 +111,10 @@ export class ProgressService implements IProgressService {
         : progressPercent === 100
         ? true
         : undefined;
+
+    if (isCompleted === true) {
+      await this.validateLessonCompletionRequirements(userId, lessonId);
+    }
 
     const existingProgress = await this.prisma.lessonProgress.findUnique({
       where: {

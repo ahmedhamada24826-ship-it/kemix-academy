@@ -7,6 +7,8 @@ describe("CertificateService", () => {
   let mockPrisma: {
     course: { findUnique: ReturnType<typeof vi.fn> };
     enrollment: { findUnique: ReturnType<typeof vi.fn> };
+    quiz: { findMany: ReturnType<typeof vi.fn> };
+    quizAttempt: { findFirst: ReturnType<typeof vi.fn> };
     certificate: {
       findUnique: ReturnType<typeof vi.fn>;
       findFirst: ReturnType<typeof vi.fn>;
@@ -24,6 +26,12 @@ describe("CertificateService", () => {
       },
       enrollment: {
         findUnique: vi.fn(),
+      },
+      quiz: {
+        findMany: vi.fn(),
+      },
+      quizAttempt: {
+        findFirst: vi.fn(),
       },
       certificate: {
         findUnique: vi.fn(),
@@ -63,6 +71,7 @@ describe("CertificateService", () => {
         percentage: 100,
         isCompleted: true,
       });
+      mockPrisma.quiz.findMany.mockResolvedValue([]);
       mockPrisma.certificate.create.mockImplementation(({ data }: { data: Record<string, unknown> }) =>
         Promise.resolve({
           id: "cert-1",
@@ -96,10 +105,37 @@ describe("CertificateService", () => {
         percentage: 60,
         isCompleted: false,
       });
+      mockPrisma.quiz.findMany.mockResolvedValue([]);
 
       await expect(
         certService.claimCertificate("user-1", "course-1")
       ).rejects.toThrow("Course requirements not met: 6/10");
+    });
+
+    it("rejects certificate claim when a course quiz has not been passed", async () => {
+      mockPrisma.course.findUnique.mockResolvedValue({
+        id: "course-1",
+        title: "Python for Data Analysis",
+        status: "PUBLISHED",
+        certificatesEnabled: true,
+      });
+      mockPrisma.enrollment.findUnique.mockResolvedValue({
+        id: "enr-1",
+        status: "ACTIVE",
+      });
+      mockPrisma.certificate.findUnique.mockResolvedValue(null);
+      mockProgressService.calculateCourseCompletion.mockResolvedValue({
+        totalLessons: 10,
+        completedLessons: 10,
+        percentage: 100,
+        isCompleted: true,
+      });
+      mockPrisma.quiz.findMany.mockResolvedValue([{ id: "quiz-1" }]);
+      mockPrisma.quizAttempt.findFirst.mockResolvedValue(null);
+
+      await expect(
+        certService.claimCertificate("user-1", "course-1")
+      ).rejects.toThrow("all published quizzes must be passed before earning a certificate");
     });
 
     it("rejects claims when certificate issuance is disabled", async () => {

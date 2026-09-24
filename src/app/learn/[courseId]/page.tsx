@@ -255,6 +255,7 @@ export default function CoursePlayerPage({
               })
             );
             setCourseQuizzes(details);
+            await Promise.all(details.map((quiz) => loadQuizAttemptInfo(quiz.id)));
           }
         }
 
@@ -392,7 +393,27 @@ export default function CoursePlayerPage({
 
   // 3. Mark Lesson Completed
   const handleMarkComplete = async (completed = true) => {
-    if (!activeLessonId) return;
+    if (!activeLessonId || !activeLesson) return;
+
+    if (completed) {
+      const requiredTasks = activeLesson.tasks ?? [];
+      const missingTask = requiredTasks.length > 0 && requiredTasks.some((task) => !task.userSubmission);
+
+      const requiredQuizzes = activeLesson.quizzes ?? [];
+      const missingQuiz =
+        requiredQuizzes.length > 0 &&
+        requiredQuizzes.some((quiz) => quizAttemptInfo[quiz.id]?.passed !== true);
+
+      if (missingTask) {
+        alert("يجب تسليم التكليف المطلوب قبل إكمال هذه المحاضرة.");
+        return;
+      }
+
+      if (missingQuiz) {
+        alert("يجب اجتياز الاختبار المطلوب قبل إكمال هذه المحاضرة.");
+        return;
+      }
+    }
 
     try {
       const res = await fetch(`/api/lessons/${activeLessonId}/progress`, {
@@ -660,16 +681,18 @@ export default function CoursePlayerPage({
             </div>
           </div>
 
-          {progress?.progressPercent === 100 && courseCertificatesEnabled && (
-            <Button
-              size="sm"
-              onClick={() => setCertificateModalOpen(true)}
-              className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold h-8 shadow-sm flex items-center gap-1.5"
-            >
-              <Award className="h-3.5 w-3.5" />
-              <span>استلام الشهادة</span>
-            </Button>
-          )}
+          {progress?.progressPercent === 100 &&
+            courseCertificatesEnabled &&
+            (courseQuizzes.length === 0 || courseQuizzes.every((quiz) => quizAttemptInfo[quiz.id]?.passed === true)) && (
+              <Button
+                size="sm"
+                onClick={() => setCertificateModalOpen(true)}
+                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold h-8 shadow-sm flex items-center gap-1.5"
+              >
+                <Award className="h-3.5 w-3.5" />
+                <span>استلام الشهادة</span>
+              </Button>
+            )}
 
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
