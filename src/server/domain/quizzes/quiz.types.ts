@@ -75,6 +75,11 @@ export interface QuizAttemptDto {
     title: string;
     passingScore: number;
     timeLimitMinutes: number | null;
+    course?: {
+      id: string;
+      title?: string;
+      instructorId?: string;
+    };
   };
 }
 

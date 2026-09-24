@@ -181,8 +181,6 @@ export function CertificateDocument({ certificate, showActions = true }: Certifi
 
           <div className="certificate-qr">
             {qrCode ? <img src={qrCode} alt="Certificate verification QR code" /> : <div className="certificate-qr-placeholder" />}
-            <span>Verify this certificate at</span>
-            <strong>{typeof window === "undefined" ? "" : window.location.host}/certificates/verify/{certificate.certificateCode}</strong>
           </div>
         </footer>
       </article>

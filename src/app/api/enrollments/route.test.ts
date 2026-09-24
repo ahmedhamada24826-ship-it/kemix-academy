@@ -64,6 +64,51 @@ describe("API /api/enrollments", () => {
       expect(res.status).toBe(200);
       expect(data.data.enrollments).toHaveLength(1);
     });
+
+    it("normalizes admin enrollment records to expose student names for the registrations page", async () => {
+      const adminUser = {
+        ...studentUser,
+        id: "admin-1",
+        role: "ADMIN" as const,
+      };
+
+      vi.spyOn(authGuard, "getCurrentUser").mockResolvedValue(adminUser);
+      vi.mocked(enrollmentService.listAllEnrollments).mockResolvedValue({
+        enrollments: [
+          {
+            id: "enr-admin-1",
+            userId: studentUser.id,
+            courseId: "course-1",
+            status: "ACTIVE",
+            enrollmentType: "ADMIN_ASSIGNED",
+            enrolledAt: new Date(),
+            completedAt: null,
+            createdAt: new Date(),
+            updatedAt: new Date(),
+            user: {
+              id: studentUser.id,
+              fullName: "Student One",
+              email: "student@kemix.com",
+            },
+            course: {
+              id: "course-1",
+              title: "Python Basics",
+              slug: "python-basics",
+              coverImageUrl: null,
+            },
+          },
+        ],
+        total: 1,
+      });
+
+      const req = new NextRequest("http://localhost:3000/api/enrollments");
+      const res = await GET(req);
+      const data = await res.json();
+
+      expect(res.status).toBe(200);
+      expect(data.data.enrollments[0].student.fullName).toBe("Student One");
+      expect(data.data.enrollments[0].student.email).toBe("student@kemix.com");
+    });
   });
 
   describe("POST", () => {

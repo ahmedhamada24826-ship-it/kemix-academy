@@ -58,6 +58,13 @@ interface QuizItem {
   questions?: QuizQuestion[];
 }
 
+interface QuizAttemptSummary {
+  studentName: string;
+  score: number;
+  passed: boolean;
+  createdAt: string;
+}
+
 function toDateTimeLocalValue(value?: string | null): string {
   if (!value) return "";
   const date = new Date(value);
@@ -80,6 +87,7 @@ export default function AdminQuizzesPage() {
   const [selectedQuiz, setSelectedQuiz] = useState<QuizItem | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [quizAttempts, setQuizAttempts] = useState<Record<string, QuizAttemptSummary | null>>({});
 
   // Create/Edit Quiz Modal
   const [quizModalOpen, setQuizModalOpen] = useState(false);
@@ -144,7 +152,33 @@ export default function AdminQuizzesPage() {
               }
             }
           }
+
+          const latestAttemptsByQuiz: Record<string, QuizAttemptSummary | null> = {};
+          for (const quiz of allQuizzes) {
+            try {
+              const attemptsRes = await fetch(`/api/admin/results?quizId=${quiz.id}`, { cache: "no-store" });
+              if (!attemptsRes.ok) continue;
+              const attemptsJson = await attemptsRes.json();
+              const attempts = attemptsJson?.data?.attempts ?? [];
+              const latest = attempts[0];
+              if (latest?.user?.fullName) {
+                latestAttemptsByQuiz[quiz.id] = {
+                  studentName: latest.user.fullName,
+                  score: Number(latest.score ?? 0),
+                  passed: Boolean(latest.passed),
+                  createdAt: latest.createdAt,
+                };
+              } else {
+                latestAttemptsByQuiz[quiz.id] = null;
+              }
+            } catch (err) {
+              console.warn("Failed to fetch attempt summary for quiz", quiz.id, err);
+              latestAttemptsByQuiz[quiz.id] = null;
+            }
+          }
+
           setQuizzes(allQuizzes);
+          setQuizAttempts(latestAttemptsByQuiz);
         }
       }
     } catch (err) {
@@ -398,6 +432,21 @@ export default function AdminQuizzesPage() {
                     {quiz.description}
                   </CardDescription>
                 )}
+                <div className="mt-3 rounded-lg border border-blue-100 bg-blue-50/60 px-2.5 py-2 text-[11px] text-slate-700">
+                  {quizAttempts[quiz.id] ? (
+                    <>
+                      <p className="font-bold text-slate-800">آخر محاولة</p>
+                      <p>
+                        {quizAttempts[quiz.id]?.studentName} · {quizAttempts[quiz.id]?.score}%
+                      </p>
+                      <p className="text-[10px] text-slate-500">
+                        {quizAttempts[quiz.id]?.passed ? "نجح" : "لم ينجح"} · {new Date(quizAttempts[quiz.id]?.createdAt ?? Date.now()).toLocaleDateString("ar-EG")}
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-slate-500">لا توجد محاولات مسجلة بعد.</p>
+                  )}
+                </div>
               </CardHeader>
 
               <CardContent className="p-5 pt-0 space-y-4">

@@ -700,6 +700,7 @@ export class QuizService implements IQuizService {
             title: true,
             passingScore: true,
             timeLimitMinutes: true,
+            course: { select: { id: true, title: true } },
           },
         },
       },

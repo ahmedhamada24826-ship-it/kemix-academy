@@ -247,6 +247,55 @@ describe("QuizService", () => {
     });
   });
 
+  describe("listAllAttempts", () => {
+    it("includes student and course metadata needed by the quizzes dashboard", async () => {
+      mockPrisma.quizAttempt.findMany.mockResolvedValue([
+        {
+          id: "att-1",
+          quizId: "quiz-1",
+          userId: studentUser.id,
+          score: 90,
+          passed: true,
+          attemptNumber: 1,
+          timeSpentSeconds: 300,
+          startedAt: new Date(),
+          submittedAt: new Date(),
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          status: "SUBMITTED",
+          user: { id: studentUser.id, fullName: studentUser.fullName, email: studentUser.email },
+          quiz: { id: "quiz-1", title: "Midterm Quiz", passingScore: 75, timeLimitMinutes: 20, course: { id: "course-1", title: "Data Analysis" } },
+        },
+      ]);
+
+      const attempts = await quizService.listAllAttempts(instructorUser, { quizId: "quiz-1" });
+
+      expect(attempts).toHaveLength(1);
+      expect(mockPrisma.quizAttempt.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            quizId: "quiz-1",
+            quiz: { course: { instructorId: instructorUser.id } },
+          }),
+          include: expect.objectContaining({
+            user: { select: { id: true, fullName: true, email: true } },
+            quiz: {
+              select: {
+                id: true,
+                title: true,
+                passingScore: true,
+                timeLimitMinutes: true,
+                course: { select: { id: true, title: true } },
+              },
+            },
+          }),
+        })
+      );
+      expect(attempts[0].user?.fullName).toBe(studentUser.fullName);
+      expect(attempts[0].quiz?.course?.title).toBe("Data Analysis");
+    });
+  });
+
   describe("question management", () => {
     it("updates question text and replaces options", async () => {
       mockPrisma.quizQuestion.findUnique

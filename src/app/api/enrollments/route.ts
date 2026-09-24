@@ -29,12 +29,50 @@ export async function GET(req: NextRequest) {
 
     if (user.role === "ADMIN" || (user.role === "INSTRUCTOR" && parseResult.data.courseId)) {
       const result = await enrollmentService.listAllEnrollments(user, parseResult.data);
-      return apiSuccess(result, 200);
+      const normalizedEnrollments = (result.enrollments ?? []).map((enrollment: any) => {
+        const student = enrollment.user ?? enrollment.student ?? null;
+        const course = enrollment.course ?? null;
+
+        return {
+          ...enrollment,
+          student: student
+            ? {
+                id: student.id,
+                fullName: student.fullName ?? "Student",
+                email: student.email ?? "",
+              }
+            : null,
+          user: student,
+          course: course,
+          studentId: enrollment.userId ?? enrollment.studentId ?? student?.id ?? null,
+        };
+      });
+
+      return apiSuccess({ ...result, enrollments: normalizedEnrollments }, 200);
     }
 
     // Default to user's own enrollments
     const result = await enrollmentService.listUserEnrollments(user.id, parseResult.data);
-    return apiSuccess(result, 200);
+    const normalizedOwnEnrollments = (result.enrollments ?? []).map((enrollment: any) => {
+      const course = enrollment.course ?? null;
+      const student = enrollment.user ?? enrollment.student ?? null;
+
+      return {
+        ...enrollment,
+        student: student
+          ? {
+              id: student.id,
+              fullName: student.fullName ?? "Student",
+              email: student.email ?? "",
+            }
+          : null,
+        user: student,
+        course,
+        studentId: enrollment.userId ?? enrollment.studentId ?? student?.id ?? null,
+      };
+    });
+
+    return apiSuccess({ ...result, enrollments: normalizedOwnEnrollments }, 200);
   } catch (err) {
     console.error("❌ /api/enrollments GET failure:", err instanceof Error ? err.message : err);
     return apiError("INTERNAL_ERROR", "Failed to retrieve enrollments", 500);
