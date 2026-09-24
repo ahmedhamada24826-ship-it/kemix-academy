@@ -32,10 +32,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
   const refreshUser = useCallback(async () => {
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 10000);
+
     try {
       const res = await fetch("/api/auth/me", {
         headers: { Accept: "application/json" },
         cache: "no-store",
+        signal: controller.signal,
       });
       if (res.ok) {
         const json = await res.json();
@@ -48,6 +52,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } catch {
       setUser(null);
     } finally {
+      window.clearTimeout(timeoutId);
       setIsLoading(false);
     }
   }, []);
