@@ -60,3 +60,29 @@ export async function POST(req: NextRequest) {
     return apiError("INTERNAL_ERROR", message, 500);
   }
 }
+
+export async function DELETE(req: NextRequest) {
+  try {
+    const user = await getCurrentUser(req);
+    if (!user) {
+      return apiError("UNAUTHENTICATED", "Authentication required", 401);
+    }
+
+    const certificateId = req.nextUrl.searchParams.get("id");
+    if (!certificateId) {
+      return apiError("VALIDATION_ERROR", "Certificate id is required", 400);
+    }
+
+    await certificateService.deleteCertificate(certificateId, user);
+    return apiSuccess({ message: "Certificate deleted successfully" }, 200);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Failed to delete certificate";
+    if (message.includes("not found")) {
+      return apiError("NOT_FOUND", message, 404);
+    }
+    if (message.includes("Forbidden")) {
+      return apiError("FORBIDDEN", message, 403);
+    }
+    return apiError("INTERNAL_ERROR", message, 500);
+  }
+}

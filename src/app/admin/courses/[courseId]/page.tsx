@@ -395,7 +395,11 @@ export default function AdminCourseDetailPage({
         maxSizeMb: 5,
         accept: ["image/png", "image/jpeg", "image/webp"],
       });
-      const uploadedCoverUrl = asset?.publicUrl || (asset?.id ? `/api/files/${asset.id}/access?redirect=1` : null);
+      const uploadedCoverUrl =
+        asset?.publicUrl ||
+        (asset?.storageKey && /^https?:\/\//i.test(asset.storageKey) ? asset.storageKey : null) ||
+        (asset?.id ? `/api/files/${asset.id}/access?redirect=1` : null);
+
       if (uploadedCoverUrl) {
         setCoverUrl(uploadedCoverUrl);
         setCoverFile(null);
@@ -1182,7 +1186,6 @@ export default function AdminCourseDetailPage({
                         onChange={(e) => {
                           const file = e.target.files?.[0];
                           if (file) handleCoverFileSelect(file);
-                          e.target.value = "";
                         }}
                         disabled={coverUploading}
                         className="block w-full text-xs text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 disabled:opacity-50"

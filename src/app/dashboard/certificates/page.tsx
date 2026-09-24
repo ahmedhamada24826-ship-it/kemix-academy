@@ -22,26 +22,49 @@ export default function StudentCertificatesPage() {
   const { user, isAuthenticated, isLoading } = useAuth();
   const [certificates, setCertificates] = useState<CertificateItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function loadCertificates() {
+    try {
+      const res = await fetch("/api/certificates");
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.data?.certificates) {
+          setCertificates(data.data.certificates);
+        }
+      }
+    } catch (err) {
+      console.error("Failed to load certificates:", err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const handleDeleteCertificate = async (certificateId: string) => {
+    if (!window.confirm("هل أنت متأكد من حذف هذه الشهادة؟")) return;
+
+    setDeletingId(certificateId);
+    try {
+      const res = await fetch(`/api/certificates?id=${encodeURIComponent(certificateId)}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const json = await res.json().catch(() => null);
+        throw new Error(json?.error?.message || "فشل حذف الشهادة");
+      }
+
+      await loadCertificates();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "فشل حذف الشهادة");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   useEffect(() => {
-    async function loadCertificates() {
-      try {
-        const res = await fetch("/api/certificates");
-        if (res.ok) {
-          const data = await res.json();
-          if (data.success && data.data?.certificates) {
-            setCertificates(data.data.certificates);
-          }
-        }
-      } catch (err) {
-        console.error("Failed to load certificates:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
-
     if (isAuthenticated) {
-      loadCertificates();
+      void loadCertificates();
     }
   }, [isAuthenticated]);
 
@@ -101,13 +124,26 @@ export default function StudentCertificatesPage() {
                   <p className="text-xs text-slate-500">
                     تاريخ الإصدار: {new Date(cert.issuedAt).toLocaleDateString("ar-EG")}
                   </p>
-                  <Link
-                    href={`/verify/${encodeURIComponent(cert.certificateCode)}`}
-                    className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8]"
-                  >
-                    <span>عرض صفحة التحقق الرسمية</span>
-                    <ExternalLink className="h-3.5 w-3.5" />
-                  </Link>
+                  <div className="flex items-center justify-between gap-3">
+                    <Link
+                      href={`/verify/${encodeURIComponent(cert.certificateCode)}`}
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-[#2563EB] hover:text-[#1D4ED8]"
+                    >
+                      <span>عرض صفحة التحقق الرسمية</span>
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </Link>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={deletingId === cert.id}
+                      onClick={() => void handleDeleteCertificate(cert.id)}
+                      className="border-red-200 text-red-600 hover:bg-red-50 text-[11px] font-bold"
+                    >
+                      {deletingId === cert.id ? "جارٍ الحذف..." : "حذف الشهادة"}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             ))}

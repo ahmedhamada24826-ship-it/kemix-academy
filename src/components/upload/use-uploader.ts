@@ -188,7 +188,15 @@ export function useUploader() {
           );
         }
 
-        const asset = registerJson.data.fileAsset as UploadedAsset;
+        let asset = registerJson.data.fileAsset as UploadedAsset;
+        if (!asset.publicUrl && asset.id) {
+          const accessRes = await fetch(`/api/files/${asset.id}/access`, { cache: "no-store" });
+          const accessJson = await accessRes.json().catch(() => null);
+          if (accessRes.ok && accessJson?.success && accessJson.data?.url) {
+            asset = { ...asset, publicUrl: accessJson.data.url };
+          }
+        }
+
         setState({ isUploading: false, progress: 100, error: null, asset });
         return asset;
       } catch (err) {

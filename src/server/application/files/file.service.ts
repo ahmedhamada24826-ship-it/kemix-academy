@@ -146,7 +146,11 @@ export class FileService implements IFileService {
     return {
       ...asset,
       publicUrl:
-        asset.visibility === "PUBLIC" ? this.storage.getPublicUrl(asset.storageKey) : undefined,
+        asset.visibility === "PUBLIC"
+          ? this.isExternalUrl(asset.storageKey)
+            ? asset.storageKey
+            : this.storage.getPublicUrl(asset.storageKey)
+          : undefined,
     };
   }
 

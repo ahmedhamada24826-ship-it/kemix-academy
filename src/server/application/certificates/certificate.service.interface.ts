@@ -11,6 +11,8 @@ export interface ICertificateService {
 
   getUserCertificates(userId: string): Promise<CertificateDto[]>;
 
+  deleteCertificate(certificateId: string, user?: AuthenticatedUser | null): Promise<void>;
+
   getCertificateById(
     certificateId: string,
     user?: AuthenticatedUser | null

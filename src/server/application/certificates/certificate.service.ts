@@ -193,6 +193,35 @@ export class CertificateService implements ICertificateService {
     return certificates as unknown as CertificateDto[];
   }
 
+  async deleteCertificate(certificateId: string, user?: AuthenticatedUser | null): Promise<void> {
+    const certificate = await this.prisma.certificate.findUnique({
+      where: { id: certificateId },
+      include: {
+        course: { select: { id: true, title: true, slug: true, instructorId: true } },
+        user: { select: { id: true, fullName: true } },
+      },
+    });
+
+    if (!certificate) {
+      throw new Error("Certificate not found");
+    }
+
+    if (user) {
+      const isOwner = certificate.userId === user.id;
+      const isAdmin = user.role === "ADMIN";
+      const isInstructor =
+        user.role === "INSTRUCTOR" && certificate.course.instructorId === user.id;
+
+      if (!isOwner && !isAdmin && !isInstructor) {
+        throw new Error("Forbidden: You cannot delete this certificate");
+      }
+    }
+
+    await this.prisma.certificate.delete({
+      where: { id: certificateId },
+    });
+  }
+
   async getCertificateById(
     certificateId: string,
     user?: AuthenticatedUser | null

@@ -14,6 +14,7 @@ describe("CertificateService", () => {
       findFirst: ReturnType<typeof vi.fn>;
       findMany: ReturnType<typeof vi.fn>;
       create: ReturnType<typeof vi.fn>;
+      delete: ReturnType<typeof vi.fn>;
     };
   };
   let mockProgressService: { calculateCourseCompletion: ReturnType<typeof vi.fn> };
@@ -38,6 +39,7 @@ describe("CertificateService", () => {
         findFirst: vi.fn(),
         findMany: vi.fn(),
         create: vi.fn(),
+        delete: vi.fn(),
       },
     };
 
@@ -149,6 +151,29 @@ describe("CertificateService", () => {
       await expect(
         certService.claimCertificate("user-1", "course-1")
       ).rejects.toThrow("Certificate issuance is not enabled for this course");
+    });
+  });
+
+  describe("deleteCertificate", () => {
+    it("removes a certificate for the owner", async () => {
+      mockPrisma.certificate.findUnique.mockResolvedValue({
+        id: "cert-1",
+        userId: "user-1",
+        course: { id: "course-1", instructorId: "inst-1" },
+        user: { id: "user-1", fullName: "Jane Doe" },
+      });
+      mockPrisma.certificate.delete.mockResolvedValue({});
+
+      await expect(certService.deleteCertificate("cert-1", {
+        id: "user-1",
+        email: "jane@example.com",
+        fullName: "Jane Doe",
+        role: "STUDENT",
+        status: "ACTIVE",
+        avatarUrl: null,
+        bio: null,
+        createdAt: new Date(),
+      })).resolves.toBeUndefined();
     });
   });
 
