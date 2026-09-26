@@ -313,11 +313,11 @@ export default function CourseDetailPage({
             {/* Right Col: Action & Enrollment Box */}
             <div className="lg:col-span-1">
               <Card className="border-slate-700/80 bg-slate-900/90 text-white shadow-2xl backdrop-blur-md overflow-hidden">
-                <div className="relative h-44 w-full bg-slate-800">
+                <div className="relative aspect-video w-full bg-slate-800">
                   {course.coverImageUrl ? (
                     <div
                       style={{ backgroundImage: `url(${course.coverImageUrl})` }}
-                      className="h-full w-full bg-contain bg-center bg-no-repeat"
+                      className="h-full w-full bg-cover bg-center bg-no-repeat"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-blue-900/40">

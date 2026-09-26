@@ -125,11 +125,11 @@ export function useUploader() {
   }, []);
 
   const upload = useCallback(
-    async (file: File, options: UploadOptions): Promise<UploadedAsset | null> => {
+    async (file: File, options: UploadOptions): Promise<UploadedAsset> => {
       const validationError = validateFile(file, options);
       if (validationError) {
         setState({ isUploading: false, progress: 0, error: validationError, asset: null });
-        return null;
+        throw new Error(validationError);
       }
 
       setState({ isUploading: true, progress: 0, error: null, asset: null });
@@ -202,7 +202,7 @@ export function useUploader() {
       } catch (err) {
         const message = err instanceof Error ? err.message : "فشل رفع الملف";
         setState({ isUploading: false, progress: 0, error: message, asset: null });
-        return null;
+        throw err instanceof Error ? err : new Error(message);
       }
     },
     []

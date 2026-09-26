@@ -262,9 +262,11 @@ export default function AdminCourseDetailPage({
       lessonId: editingLesson.id,
       maxSizeMb: category === "VIDEO" ? 500 : 50,
       accept: category === "VIDEO" ? ["video/*"] : undefined,
+    }).catch((err: unknown) => {
+      setLessonUploadError(err instanceof Error ? err.message : "فشل رفع الملف");
+      return null;
     });
     if (!asset) {
-      setLessonUploadError(uploader.error || "فشل رفع الملف");
       return;
     }
     if (category === "VIDEO") {
@@ -396,9 +398,9 @@ export default function AdminCourseDetailPage({
         accept: ["image/png", "image/jpeg", "image/webp"],
       });
       const uploadedCoverUrl =
-        asset?.publicUrl ||
-        (asset?.storageKey && /^https?:\/\//i.test(asset.storageKey) ? asset.storageKey : null) ||
-        (asset?.id ? `/api/files/${asset.id}/access?redirect=1` : null);
+        asset.publicUrl ||
+        (/^https?:\/\//i.test(asset.storageKey) ? asset.storageKey : null) ||
+        `/api/files/${asset.id}/access?redirect=1`;
 
       if (uploadedCoverUrl) {
         setCoverUrl(uploadedCoverUrl);
@@ -408,8 +410,8 @@ export default function AdminCourseDetailPage({
       } else {
         setCoverUploadError("تم الرفع لكن لم يتم استرجاع رابط الصورة.");
       }
-    } catch {
-      setCoverUploadError("فشل رفع الصورة. حاول مرة أخرى.");
+    } catch (err) {
+      setCoverUploadError(err instanceof Error ? err.message : "فشل رفع الصورة. حاول مرة أخرى.");
     } finally {
       setCoverUploading(false);
     }
@@ -1217,13 +1219,13 @@ export default function AdminCourseDetailPage({
                         <img
                           src={coverPreview}
                           alt="Cover preview"
-                          className="h-40 w-40 object-contain rounded-lg border border-slate-200 bg-slate-50"
+                          className="aspect-video w-full max-w-sm object-cover rounded-lg border border-slate-200 bg-slate-50"
                         />
                       ) : coverUrl ? (
                         <img
                           src={coverUrl}
                           alt="Current cover"
-                          className="h-40 w-40 object-contain rounded-lg border border-slate-200 bg-slate-50"
+                          className="aspect-video w-full max-w-sm object-cover rounded-lg border border-slate-200 bg-slate-50"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : null}
