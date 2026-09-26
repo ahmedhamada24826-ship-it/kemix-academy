@@ -18,7 +18,11 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (email: string, password: string, rememberMe?: boolean) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string, rememberMe?: boolean) => Promise<{
+    success: boolean;
+    error?: string;
+    user?: User;
+  }>;
   register: (fullName: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
@@ -83,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         await refreshUser();
       }
 
-      return { success: true };
+      return { success: true, user: json.data?.user as User | undefined };
     } catch (err) {
       return {
         success: false,

@@ -14,7 +14,7 @@ import { Lock, Mail } from "lucide-react";
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const returnUrl = searchParams.get("returnUrl") || "/dashboard";
+  const returnUrl = searchParams.get("returnUrl");
 
   const { login } = useAuth();
   const [email, setEmail] = useState("");
@@ -40,7 +40,13 @@ function LoginForm() {
       return;
     }
 
-    router.push(returnUrl);
+    const defaultDestination =
+      result.user?.role === "ADMIN"
+        ? "/admin"
+        : result.user?.role === "INSTRUCTOR"
+        ? "/instructor"
+        : "/dashboard";
+    router.push(returnUrl || defaultDestination);
     router.refresh();
   };
 
