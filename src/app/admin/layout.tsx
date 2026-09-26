@@ -25,6 +25,7 @@ import {
   Sliders,
   Menu,
   X,
+  GraduationCap,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -74,6 +75,7 @@ export default function AdminLayout({
       title: "إدارة التعليم",
       items: [
         { label: "الكورسات", href: "/admin/courses", icon: <BookOpen className="h-4 w-4" /> },
+        { label: "إدارة المدربين", href: "/admin/instructors", icon: <GraduationCap className="h-4 w-4" /> },
         { label: "الملفات والوسائط", href: "/admin/media", icon: <HardDrive className="h-4 w-4" /> },
         { label: "التكليفات والواجبات", href: "/admin/tasks", icon: <FileCheck className="h-4 w-4" /> },
         { label: "الاختبارات", href: "/admin/quizzes", icon: <HelpCircle className="h-4 w-4" /> },
