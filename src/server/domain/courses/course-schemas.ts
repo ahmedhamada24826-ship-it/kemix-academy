@@ -82,6 +82,7 @@ export const UpdateCourseSchema = z.object({
   isArchived: z.boolean().optional(),
   durationSeconds: z.coerce.number().int().nonnegative().optional(),
   status: CourseStatusEnum.optional(),
+  coInstructorIds: z.array(z.string().uuid()).max(20).optional(),
 });
 
 export const CourseQuerySchema = z.object({

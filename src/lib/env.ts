@@ -1,5 +1,11 @@
 import { z } from "zod";
 
+const bucketName = (defaultValue: string) =>
+  z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().min(1).default(defaultValue)
+  );
+
 const envSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   NEXT_PUBLIC_APP_URL: z.string().url().default("http://localhost:3000"),
@@ -19,8 +25,8 @@ const envSchema = z.object({
   S3_REGION: z.string().default("us-east-1"),
   S3_ACCESS_KEY_ID: z.string().default("minioadmin"),
   S3_SECRET_ACCESS_KEY: z.string().default("minioadmin"),
-  S3_PUBLIC_BUCKET: z.string().default("kemix-academy-public"),
-  S3_PRIVATE_BUCKET: z.string().default("kemix-academy-protected"),
+  S3_PUBLIC_BUCKET: bucketName("kemix-academy-public"),
+  S3_PRIVATE_BUCKET: bucketName("kemix-academy-protected"),
   S3_PUBLIC_URL: z.string().url().optional().or(z.literal("")),
   S3_FORCE_PATH_STYLE: z.string()
     .transform((val) => val === "true")

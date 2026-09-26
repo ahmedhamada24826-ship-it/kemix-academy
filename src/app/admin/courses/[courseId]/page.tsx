@@ -103,6 +103,11 @@ interface CourseDetail {
   requirements?: string | null;
   whatYouWillLearn?: string[];
   durationSeconds: number;
+  instructor?: { id: string; fullName: string; avatarUrl: string | null; bio: string | null };
+  coInstructors?: {
+    instructorId: string;
+    instructor: { id: string; fullName: string; avatarUrl: string | null; bio: string | null };
+  }[];
 }
 
 export default function AdminCourseDetailPage({
@@ -139,6 +144,23 @@ export default function AdminCourseDetailPage({
   const [learnOutcomesStr, setLearnOutcomesStr] = useState("");
   const [isSavingMeta, setIsSavingMeta] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [instructors, setInstructors] = useState<
+    { id: string; fullName: string; email: string; avatarUrl: string | null; bio: string | null }[]
+  >([]);
+  const [coInstructorIds, setCoInstructorIds] = useState<string[]>([]);
+  const [primaryInstructorName, setPrimaryInstructorName] = useState("");
+  const [primaryInstructorBio, setPrimaryInstructorBio] = useState("");
+  const [isRenamingInstructor, setIsRenamingInstructor] = useState(false);
+  const [instructorNameError, setInstructorNameError] = useState<string | null>(null);
+  const [instructorProfileErrors, setInstructorProfileErrors] = useState<Record<string, string>>({});
+  const [newInstructorName, setNewInstructorName] = useState("");
+  const [newInstructorEmail, setNewInstructorEmail] = useState("");
+  const [newInstructorPassword, setNewInstructorPassword] = useState("");
+  const [newInstructorBio, setNewInstructorBio] = useState("");
+  const [isCreatingInstructor, setIsCreatingInstructor] = useState(false);
+  const [createInstructorError, setCreateInstructorError] = useState<string | null>(null);
+  const [createInstructorSuccess, setCreateInstructorSuccess] = useState(false);
 
   // Add section modal
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
@@ -436,11 +458,19 @@ export default function AdminCourseDetailPage({
     setLoadError(null);
 
     try {
-      const [cRes, sRes, qRes] = await Promise.all([
+      const [cRes, sRes, qRes, iRes] = await Promise.all([
         fetch(`/api/courses/${courseId}`),
         fetch(`/api/courses/${courseId}/sections`),
         fetch(`/api/courses/${courseId}/quizzes`),
+        fetch("/api/admin/instructors"),
       ]);
+
+      if (iRes.ok) {
+        const iData = await iRes.json();
+        if (iData.success && Array.isArray(iData.data?.instructors)) {
+          setInstructors(iData.data.instructors);
+        }
+      }
 
       if (!cRes.ok) {
         if (cRes.status === 404) {
@@ -456,6 +486,9 @@ export default function AdminCourseDetailPage({
       if (cData.success && cData.data?.course) {
         const c: CourseDetail = cData.data.course;
         setCourse(c);
+        setCoInstructorIds(c.coInstructors?.map(({ instructorId }) => instructorId) ?? []);
+        setPrimaryInstructorName(c.instructor?.fullName ?? "");
+        setPrimaryInstructorBio(c.instructor?.bio ?? "");
         setTitle(c.title);
         setShortDesc(c.shortDescription || "");
         setDesc(c.description || "");
@@ -508,6 +541,7 @@ export default function AdminCourseDetailPage({
     e.preventDefault();
     setIsSavingMeta(true);
     setSaveSuccess(false);
+    setSaveError(null);
 
     try {
       const tools = toolsStr.split(",").map((t) => t.trim()).filter(Boolean);
@@ -530,18 +564,145 @@ export default function AdminCourseDetailPage({
           tools,
           requirements: requirementsStr.trim() || undefined,
           whatYouWillLearn,
+          coInstructorIds,
         }),
       });
 
-      if (res.ok) {
-        setSaveSuccess(true);
-        setTimeout(() => setSaveSuccess(false), 3000);
-        await refreshData();
+      const responseData = await res.json().catch(() => null);
+      if (!res.ok) {
+        throw new Error(responseData?.error?.message || "فشل حفظ بيانات الكورس");
       }
+      setSaveSuccess(true);
+      setTimeout(() => setSaveSuccess(false), 3000);
+      await refreshData();
     } catch (err) {
       console.error("Failed to save metadata:", err);
+      setSaveError(err instanceof Error ? err.message : "فشل حفظ بيانات الكورس");
     } finally {
       setIsSavingMeta(false);
+    }
+  };
+
+  const handleRenamePrimaryInstructor = async () => {
+    if (!course?.instructor || !primaryInstructorName.trim()) return;
+    setInstructorNameError(null);
+    setIsRenamingInstructor(true);
+    try {
+      const response = await fetch("/api/admin/instructors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instructorId: course.instructor.id,
+          fullName: primaryInstructorName.trim(),
+          bio: primaryInstructorBio.trim() || null,
+        }),
+      });
+      const responseData = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(responseData?.error?.message || "فشل تغيير اسم المدرب");
+      }
+      setCourse((current) =>
+        current?.instructor
+          ? {
+              ...current,
+              instructor: {
+                ...current.instructor,
+                fullName: primaryInstructorName.trim(),
+                bio: primaryInstructorBio.trim() || null,
+              },
+            }
+          : current
+      );
+      setInstructors((current) =>
+        current.map((instructor) =>
+          instructor.id === course.instructor?.id
+            ? {
+                ...instructor,
+                fullName: primaryInstructorName.trim(),
+                bio: primaryInstructorBio.trim() || null,
+              }
+            : instructor
+        )
+      );
+    } catch (err) {
+      setInstructorNameError(err instanceof Error ? err.message : "فشل تغيير اسم المدرب");
+    } finally {
+      setIsRenamingInstructor(false);
+    }
+  };
+
+  const handleCreateInstructor = async () => {
+    setCreateInstructorError(null);
+    setCreateInstructorSuccess(false);
+    setIsCreatingInstructor(true);
+    try {
+      const response = await fetch("/api/admin/instructors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fullName: newInstructorName.trim(),
+          email: newInstructorEmail.trim(),
+          password: newInstructorPassword,
+          bio: newInstructorBio.trim() || undefined,
+        }),
+      });
+      const responseData = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(responseData?.error?.message || "فشل إنشاء حساب المدرب");
+      }
+
+      const instructor = responseData.data.instructor;
+      setInstructors((current) => [...current, instructor]);
+      setCoInstructorIds((current) => [...new Set([...current, instructor.id])]);
+      setNewInstructorName("");
+      setNewInstructorEmail("");
+      setNewInstructorPassword("");
+      setNewInstructorBio("");
+      setCreateInstructorSuccess(true);
+    } catch (err) {
+      setCreateInstructorError(err instanceof Error ? err.message : "فشل إنشاء حساب المدرب");
+    } finally {
+      setIsCreatingInstructor(false);
+    }
+  };
+
+  const handleSaveCoInstructor = async (instructorId: string) => {
+    const instructor = instructors.find((item) => item.id === instructorId);
+    if (!instructor?.fullName.trim()) return;
+    setInstructorProfileErrors((current) => ({ ...current, [instructorId]: "" }));
+
+    try {
+      const response = await fetch("/api/admin/instructors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          instructorId,
+          fullName: instructor.fullName.trim(),
+          bio: instructor.bio?.trim() || null,
+        }),
+      });
+      const responseData = await response.json().catch(() => null);
+      if (!response.ok) {
+        throw new Error(responseData?.error?.message || "فشل حفظ بيانات المدرب");
+      }
+
+      setCourse((current) =>
+        current
+          ? {
+              ...current,
+              coInstructors: current.coInstructors?.map((item) =>
+                item.instructorId === instructorId
+                  ? { ...item, instructor: { ...item.instructor, ...instructor } }
+                  : item
+              ),
+            }
+          : current
+      );
+    } catch (err) {
+      setInstructorProfileErrors((current) => ({
+        ...current,
+        [instructorId]: err instanceof Error ? err.message : "فشل حفظ بيانات المدرب",
+      }));
     }
   };
 
@@ -1102,6 +1263,11 @@ export default function AdminCourseDetailPage({
                     <AlertDescription>تم حفظ وتحديث بيانات الكورس بنجاح!</AlertDescription>
                   </Alert>
                 )}
+                {saveError && (
+                  <Alert variant="destructive">
+                    <AlertDescription>{saveError}</AlertDescription>
+                  </Alert>
+                )}
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700">عنوان الكورس</label>
@@ -1110,6 +1276,178 @@ export default function AdminCourseDetailPage({
                     onChange={(e) => setTitle(e.target.value)}
                     required
                   />
+                </div>
+
+                <div className="space-y-3 rounded-md border border-slate-200 p-3">
+                  <h3 className="text-xs font-bold text-slate-800">مدربو الدورة</h3>
+                  {course?.instructor && (
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-700">المدرب الأساسي</label>
+                      <div className="flex gap-2">
+                        <Input
+                          value={primaryInstructorName}
+                          onChange={(event) => setPrimaryInstructorName(event.target.value)}
+                          aria-label="اسم المدرب الأساسي"
+                        />
+                      </div>
+                      <label className="block text-xs font-semibold text-slate-700" htmlFor="primaryInstructorBio">
+                        تفاصيل المدرب
+                      </label>
+                      <Textarea
+                        id="primaryInstructorBio"
+                        value={primaryInstructorBio}
+                        onChange={(event) => setPrimaryInstructorBio(event.target.value)}
+                        maxLength={2000}
+                        rows={3}
+                        placeholder="نبذة عن خبرة المدرب ومجالات تخصصه"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={isRenamingInstructor || !primaryInstructorName.trim()}
+                        onClick={handleRenamePrimaryInstructor}
+                      >
+                        {isRenamingInstructor ? "جارٍ الحفظ" : "حفظ بيانات المدرب"}
+                      </Button>
+                      {instructorNameError && (
+                        <p className="text-xs text-red-600">{instructorNameError}</p>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-2 border-t border-slate-200 pt-3">
+                    <p className="text-xs font-semibold text-slate-700">إنشاء حساب مدرب جديد</p>
+                    <Input
+                      value={newInstructorName}
+                      onChange={(event) => setNewInstructorName(event.target.value)}
+                      placeholder="اسم المدرب"
+                      aria-label="اسم المدرب الجديد"
+                    />
+                    <Input
+                      type="email"
+                      value={newInstructorEmail}
+                      onChange={(event) => setNewInstructorEmail(event.target.value)}
+                      placeholder="البريد الإلكتروني"
+                      aria-label="بريد المدرب الجديد"
+                    />
+                    <Input
+                      type="password"
+                      value={newInstructorPassword}
+                      onChange={(event) => setNewInstructorPassword(event.target.value)}
+                      placeholder="كلمة مرور مؤقتة"
+                      aria-label="كلمة مرور المدرب الجديد"
+                      autoComplete="new-password"
+                    />
+                    <p className="text-[10px] text-slate-500">
+                      8 أحرف على الأقل، تشمل حرفًا كبيرًا وصغيرًا ورقمًا ورمزًا.
+                    </p>
+                    <Textarea
+                      value={newInstructorBio}
+                      onChange={(event) => setNewInstructorBio(event.target.value)}
+                      placeholder="تفاصيل وخبرات المدرب"
+                      aria-label="تفاصيل المدرب الجديد"
+                      maxLength={2000}
+                      rows={2}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      disabled={
+                        isCreatingInstructor ||
+                        !newInstructorName.trim() ||
+                        !newInstructorEmail.trim() ||
+                        !newInstructorPassword
+                      }
+                      onClick={handleCreateInstructor}
+                    >
+                      {isCreatingInstructor ? "جارٍ إنشاء الحساب" : "إنشاء وإضافة للدورة"}
+                    </Button>
+                    {createInstructorSuccess && (
+                      <p className="text-xs text-emerald-700">تم إنشاء الحساب وإضافته إلى الدورة. شارك بيانات الدخول المؤقتة مع المدرب.</p>
+                    )}
+                    {createInstructorError && (
+                      <p className="text-xs text-red-600">{createInstructorError}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold text-slate-700">مدربون مشاركون</p>
+                    <div className="max-h-40 space-y-1 overflow-y-auto">
+                      {instructors
+                        .filter((instructor) => instructor.id !== course?.instructor?.id)
+                        .map((instructor) => (
+                          <div key={instructor.id} className="rounded px-2 py-1.5 hover:bg-slate-50">
+                            <label className="flex cursor-pointer items-center gap-2 text-xs text-slate-700">
+                              <input
+                                type="checkbox"
+                                checked={coInstructorIds.includes(instructor.id)}
+                                onChange={(event) =>
+                                  setCoInstructorIds((current) =>
+                                    event.target.checked
+                                      ? [...new Set([...current, instructor.id])]
+                                      : current.filter((id) => id !== instructor.id)
+                                  )
+                                }
+                                className="rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span>{instructor.fullName}</span>
+                              <span className="text-slate-400">{instructor.email}</span>
+                            </label>
+                            {coInstructorIds.includes(instructor.id) && (
+                              <div className="mt-2 space-y-2 border-r-2 border-blue-200 pr-4">
+                                <Input
+                                  value={instructor.fullName}
+                                  aria-label={`اسم ${instructor.fullName}`}
+                                  onChange={(event) =>
+                                    setInstructors((current) =>
+                                      current.map((item) =>
+                                        item.id === instructor.id
+                                          ? { ...item, fullName: event.target.value }
+                                          : item
+                                      )
+                                    )
+                                  }
+                                />
+                                <Textarea
+                                  value={instructor.bio ?? ""}
+                                  aria-label={`تفاصيل ${instructor.fullName}`}
+                                  placeholder="تفاصيل المدرب وخبراته"
+                                  maxLength={2000}
+                                  rows={2}
+                                  onChange={(event) =>
+                                    setInstructors((current) =>
+                                      current.map((item) =>
+                                        item.id === instructor.id
+                                          ? { ...item, bio: event.target.value }
+                                          : item
+                                      )
+                                    )
+                                  }
+                                />
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => handleSaveCoInstructor(instructor.id)}
+                                >
+                                  حفظ بيانات المدرب
+                                </Button>
+                                {instructorProfileErrors[instructor.id] && (
+                                  <p className="text-xs text-red-600">
+                                    {instructorProfileErrors[instructor.id]}
+                                  </p>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      {instructors.length === 0 && (
+                        <p className="py-2 text-xs text-slate-500">لا توجد حسابات مدربين متاحة.</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-1">
@@ -1219,13 +1557,13 @@ export default function AdminCourseDetailPage({
                         <img
                           src={coverPreview}
                           alt="Cover preview"
-                          className="aspect-video w-full max-w-sm object-cover rounded-lg border border-slate-200 bg-slate-50"
+                          className="h-40 w-40 object-contain rounded-lg border border-slate-200 bg-slate-50"
                         />
                       ) : coverUrl ? (
                         <img
                           src={coverUrl}
                           alt="Current cover"
-                          className="aspect-video w-full max-w-sm object-cover rounded-lg border border-slate-200 bg-slate-50"
+                          className="h-40 w-40 object-contain rounded-lg border border-slate-200 bg-slate-50"
                           onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                         />
                       ) : null}

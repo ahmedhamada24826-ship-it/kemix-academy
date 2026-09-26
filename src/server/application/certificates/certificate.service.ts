@@ -197,7 +197,7 @@ export class CertificateService implements ICertificateService {
     const certificate = await this.prisma.certificate.findUnique({
       where: { id: certificateId },
       include: {
-        course: { select: { id: true, title: true, slug: true, instructorId: true } },
+        course: { select: { id: true, title: true, slug: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
         user: { select: { id: true, fullName: true } },
       },
     });
@@ -210,7 +210,9 @@ export class CertificateService implements ICertificateService {
       const isOwner = certificate.userId === user.id;
       const isAdmin = user.role === "ADMIN";
       const isInstructor =
-        user.role === "INSTRUCTOR" && certificate.course.instructorId === user.id;
+        user.role === "INSTRUCTOR" &&
+        (certificate.course.instructorId === user.id ||
+          certificate.course.coInstructors.some((item) => item.instructorId === user.id));
 
       if (!isOwner && !isAdmin && !isInstructor) {
         throw new Error("Forbidden: You cannot delete this certificate");
@@ -229,7 +231,7 @@ export class CertificateService implements ICertificateService {
     const certificate = await this.prisma.certificate.findUnique({
       where: { id: certificateId },
       include: {
-        course: { select: { id: true, title: true, slug: true, instructorId: true } },
+        course: { select: { id: true, title: true, slug: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
         user: { select: { id: true, fullName: true } },
       },
     });
@@ -242,7 +244,9 @@ export class CertificateService implements ICertificateService {
       const isOwner = certificate.userId === user.id;
       const isAdmin = user.role === "ADMIN";
       const isInstructor =
-        user.role === "INSTRUCTOR" && certificate.course.instructorId === user.id;
+        user.role === "INSTRUCTOR" &&
+        (certificate.course.instructorId === user.id ||
+          certificate.course.coInstructors.some((item) => item.instructorId === user.id));
 
       if (!isOwner && !isAdmin && !isInstructor) {
         throw new Error("Forbidden: You cannot view this certificate directly");

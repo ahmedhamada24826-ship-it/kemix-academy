@@ -24,7 +24,7 @@ export class SectionService implements ISectionService {
   ): Promise<CourseSectionDto> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true },
+      select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {
@@ -66,7 +66,7 @@ export class SectionService implements ISectionService {
       where: { id: sectionId },
       include: {
         course: {
-          select: { id: true, instructorId: true },
+          select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
         },
       },
     });
@@ -96,7 +96,7 @@ export class SectionService implements ISectionService {
       where: { id: sectionId },
       include: {
         course: {
-          select: { id: true, instructorId: true },
+          select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
         },
       },
     });
@@ -120,7 +120,7 @@ export class SectionService implements ISectionService {
   ): Promise<(CourseSectionDto & { lessons?: LessonDto[] })[]> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, status: true, instructorId: true },
+      select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {
@@ -154,7 +154,7 @@ export class SectionService implements ISectionService {
   ): Promise<CourseSectionDto[]> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true },
+      select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {

@@ -25,7 +25,7 @@ export class TaskService implements ITaskService {
   ): Promise<TaskDto> {
     const course = await this.prisma.course.findUnique({
       where: { id: input.courseId },
-      select: { id: true, instructorId: true },
+      select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {
@@ -83,7 +83,7 @@ export class TaskService implements ITaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -127,7 +127,7 @@ export class TaskService implements ITaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -161,7 +161,7 @@ export class TaskService implements ITaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        course: { select: { id: true, title: true, status: true, instructorId: true } },
+        course: { select: { id: true, title: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -204,7 +204,7 @@ export class TaskService implements ITaskService {
       include: {
         section: {
           include: {
-            course: { select: { id: true, status: true, instructorId: true } },
+            course: { select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
           },
         },
       },
@@ -259,7 +259,7 @@ export class TaskService implements ITaskService {
   ): Promise<TaskDto[]> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true },
+      select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {
@@ -294,7 +294,14 @@ export class TaskService implements ITaskService {
     const whereClause =
       user.role === "ADMIN"
         ? {}
-        : { course: { instructorId: user.id } };
+        : {
+            course: {
+              OR: [
+                { instructorId: user.id },
+                { coInstructors: { some: { instructorId: user.id } } },
+              ],
+            },
+          };
 
     const tasks = await this.prisma.task.findMany({
       where: whereClause,
@@ -324,7 +331,7 @@ export class TaskService implements ITaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        course: { select: { id: true, status: true, instructorId: true } },
+        course: { select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -390,7 +397,7 @@ export class TaskService implements ITaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -435,7 +442,7 @@ export class TaskService implements ITaskService {
     const task = await this.prisma.task.findUnique({
       where: { id: taskId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -483,7 +490,7 @@ export class TaskService implements ITaskService {
       include: {
         task: {
           include: {
-            course: { select: { id: true, instructorId: true } },
+            course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
           },
         },
       },

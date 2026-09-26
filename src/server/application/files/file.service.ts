@@ -72,7 +72,7 @@ export class FileService implements IFileService {
     if (input.courseId) {
       const course = await this.prisma.course.findUnique({
         where: { id: input.courseId },
-        select: { id: true, instructorId: true },
+        select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
       });
       if (!course) {
         throw new Error("Course not found");
@@ -110,7 +110,7 @@ export class FileService implements IFileService {
     if (input.courseId) {
       const course = await this.prisma.course.findUnique({
         where: { id: input.courseId },
-        select: { id: true, instructorId: true },
+        select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
       });
       if (!course) {
         throw new Error("Course not found");
@@ -162,14 +162,14 @@ export class FileService implements IFileService {
       where: { id: fileAssetId },
       include: {
         course: {
-          select: { id: true, status: true, instructorId: true },
+          select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
         },
         lesson: {
           include: {
             section: {
               include: {
                 course: {
-                  select: { id: true, status: true, instructorId: true },
+                  select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
                 },
               },
             },

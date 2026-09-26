@@ -66,6 +66,15 @@ interface CourseDetail {
     avatarUrl?: string | null;
     bio?: string | null;
   };
+  coInstructors?: {
+    instructorId: string;
+    instructor: {
+      id: string;
+      fullName: string;
+      avatarUrl?: string | null;
+      bio?: string | null;
+    };
+  }[];
 }
 
 export default function CourseDetailPage({
@@ -118,6 +127,12 @@ export default function CourseDetailPage({
 
     loadData();
   }, [courseId]);
+
+  const courseInstructors = course
+    ? [course.instructor, ...(course.coInstructors ?? []).map(({ instructor }) => instructor)].filter(
+        (instructor): instructor is NonNullable<CourseDetail["instructor"]> => Boolean(instructor)
+      )
+    : [];
 
   const toggleSection = (sectionId: string) => {
     setExpandedSections((prev) => ({
@@ -295,17 +310,21 @@ export default function CourseDetailPage({
               </div>
 
               {/* Instructor snippet */}
-              {course.instructor && (
-                <div className="flex items-center gap-3 pt-2">
-                  <div className="h-10 w-10 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
-                    {course.instructor.fullName.charAt(0)}
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-400">المدرب والمشرف الأكاديمي</p>
-                    <p className="text-sm font-bold text-white">
-                      {course.instructor.fullName}
-                    </p>
-                  </div>
+              {courseInstructors.length > 0 && (
+                <div className="space-y-2 pt-2">
+                  {courseInstructors.map((instructor, index) => (
+                    <div key={instructor.id} className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-bold text-sm shadow-sm flex-shrink-0">
+                        {instructor.fullName.charAt(0)}
+                      </div>
+                      <div>
+                        <p className="text-xs text-slate-400">
+                          {index === 0 ? "المدرب الأساسي" : "مدرب مشارك"}
+                        </p>
+                        <p className="text-sm font-bold text-white">{instructor.fullName}</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
@@ -313,11 +332,11 @@ export default function CourseDetailPage({
             {/* Right Col: Action & Enrollment Box */}
             <div className="lg:col-span-1">
               <Card className="border-slate-700/80 bg-slate-900/90 text-white shadow-2xl backdrop-blur-md overflow-hidden">
-                <div className="relative aspect-video w-full bg-slate-800">
+                <div className="relative h-44 w-full bg-slate-800">
                   {course.coverImageUrl ? (
                     <div
                       style={{ backgroundImage: `url(${course.coverImageUrl})` }}
-                      className="h-full w-full bg-cover bg-center bg-no-repeat"
+                      className="h-full w-full bg-contain bg-center bg-no-repeat"
                     />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center bg-blue-900/40">
@@ -520,30 +539,30 @@ export default function CourseDetailPage({
             </div>
 
             {/* Instructor Bio Box */}
-            {course.instructor && (
+            {courseInstructors.length > 0 && (
               <Card className="bg-white border-slate-200 shadow-sm">
                 <CardHeader>
                   <CardTitle className="text-lg font-bold text-slate-900">
-                    عن المدرب
+                    مدربو الدورة
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div className="flex items-start gap-4">
-                    <div className="h-14 w-14 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-black text-xl flex-shrink-0">
-                      {course.instructor.fullName.charAt(0)}
+                  {courseInstructors.map((instructor, index) => (
+                    <div key={instructor.id} className="flex items-start gap-4">
+                      <div className="h-14 w-14 rounded-full bg-[#2563EB] text-white flex items-center justify-center font-black text-xl flex-shrink-0">
+                        {instructor.fullName.charAt(0)}
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="text-base font-bold text-slate-900">{instructor.fullName}</h4>
+                        <p className="text-xs text-slate-500 font-medium">
+                          {index === 0 ? "المدرب الأساسي" : "مدرب مشارك"}
+                        </p>
+                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
+                          {instructor.bio || "لا توجد تفاصيل مضافة عن هذا المدرب."}
+                        </p>
+                      </div>
                     </div>
-                    <div className="space-y-1">
-                      <h4 className="text-base font-bold text-slate-900">
-                        {course.instructor.fullName}
-                      </h4>
-                      <p className="text-xs text-slate-500 font-medium">
-                        كبير مدربي علوم البيانات والذكاء الاصطناعي
-                      </p>
-                      <p className="text-xs sm:text-sm text-slate-600 leading-relaxed pt-1">
-                        {course.instructor.bio || "خبير متخصص في تحليل البيانات وهندسة استعلامات قواعد البيانات ونظم ذكاء الأعمال."}
-                      </p>
-                    </div>
-                  </div>
+                  ))}
                 </CardContent>
               </Card>
             )}

@@ -59,12 +59,14 @@ describe("CourseAccessService", () => {
     id: "course-pub-1",
     status: "PUBLISHED" as const,
     instructorId: "instructor-1",
+    coInstructors: [{ instructorId: "instructor-2" }],
   };
 
   const draftCourse = {
     id: "course-draft-1",
     status: "DRAFT" as const,
     instructorId: "instructor-1",
+    coInstructors: [{ instructorId: "instructor-2" }],
   };
 
   beforeEach(() => {
@@ -87,8 +89,17 @@ describe("CourseAccessService", () => {
       expect(accessService.canManageCourse(instructorUser, draftCourse)).toBe(true);
     });
 
-    it("denies another INSTRUCTOR from managing non-owned course", () => {
-      expect(accessService.canManageCourse(otherInstructor, publishedCourse)).toBe(false);
+    it("allows an assigned co-instructor to manage the course", () => {
+      expect(accessService.canManageCourse(otherInstructor, publishedCourse)).toBe(true);
+    });
+
+    it("denies an unassigned INSTRUCTOR from managing the course", () => {
+      expect(
+        accessService.canManageCourse(
+          { ...otherInstructor, id: "instructor-3" },
+          publishedCourse
+        )
+      ).toBe(false);
     });
 
     it("denies STUDENT from managing any course", () => {

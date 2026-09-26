@@ -12,6 +12,19 @@ import { generateSlug } from "@/server/domain/courses/slug-generator";
 import { courseAccessService, CourseAccessService } from "./course-access.service";
 import { hasPermission } from "@/server/domain/security/rbac.types";
 
+const courseInstructorInclude = {
+  instructor: {
+    select: { id: true, fullName: true, avatarUrl: true, bio: true },
+  },
+  coInstructors: {
+    include: {
+      instructor: {
+        select: { id: true, fullName: true, avatarUrl: true, bio: true },
+      },
+    },
+  },
+} satisfies Prisma.CourseInclude;
+
 export class CourseService implements ICourseService {
   constructor(
     private readonly prisma: PrismaClient = defaultPrisma,
@@ -67,13 +80,7 @@ export class CourseService implements ICourseService {
         instructorId,
       },
       include: {
-        instructor: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
-          },
-        },
+        ...courseInstructorInclude,
       },
     });
 
@@ -87,7 +94,13 @@ export class CourseService implements ICourseService {
   ): Promise<CourseDto> {
     const existing = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true, title: true, status: true },
+      select: {
+        id: true,
+        instructorId: true,
+        title: true,
+        status: true,
+        coInstructors: { select: { instructorId: true } },
+      },
     });
 
     if (!existing) {
@@ -96,6 +109,10 @@ export class CourseService implements ICourseService {
 
     if (!this.accessService.canManageCourse(user, existing)) {
       throw new Error("Forbidden: You do not have permission to edit this course");
+    }
+
+    if (input.coInstructorIds !== undefined && user.role !== "ADMIN") {
+      throw new Error("Forbidden: Only admins can assign course instructors");
     }
 
     let slug: string | undefined;
@@ -123,6 +140,25 @@ export class CourseService implements ICourseService {
       ...(input.status !== undefined && { status: input.status }),
     };
 
+    if (input.coInstructorIds !== undefined) {
+      const coInstructorIds = [...new Set(input.coInstructorIds)].filter(
+        (instructorId) => instructorId !== existing.instructorId
+      );
+      const validInstructors = await this.prisma.user.findMany({
+        where: { id: { in: coInstructorIds }, role: "INSTRUCTOR" },
+        select: { id: true },
+      });
+      if (validInstructors.length !== coInstructorIds.length) {
+        throw new Error("One or more selected users are not instructors");
+      }
+      updateData.coInstructors = {
+        deleteMany: {},
+        create: coInstructorIds.map((instructorId) => ({
+          instructor: { connect: { id: instructorId } },
+        })),
+      };
+    }
+
     if (input.status === "PUBLISHED" && existing.status !== "PUBLISHED") {
       updateData.publishedAt = new Date();
     }
@@ -131,13 +167,7 @@ export class CourseService implements ICourseService {
       where: { id: courseId },
       data: updateData,
       include: {
-        instructor: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
-          },
-        },
+        ...courseInstructorInclude,
       },
     });
 
@@ -151,13 +181,7 @@ export class CourseService implements ICourseService {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
       include: {
-        instructor: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
-          },
-        },
+        ...courseInstructorInclude,
       },
     });
 
@@ -198,13 +222,7 @@ export class CourseService implements ICourseService {
     const course = await this.prisma.course.findUnique({
       where: { slug },
       include: {
-        instructor: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
-          },
-        },
+        ...courseInstructorInclude,
       },
     });
 
@@ -257,14 +275,24 @@ export class CourseService implements ICourseService {
       }
       // If instructor queries their own, filter by instructorId; otherwise allow browsing published or own
       if (params.instructorId) {
-        where.instructorId = params.instructorId;
+        where.AND = [
+          { OR: [
+            { instructorId: params.instructorId },
+            { coInstructors: { some: { instructorId: params.instructorId } } },
+          ] },
+        ];
       }
     } else if (user.role === "ADMIN") {
       if (params.status) {
         where.status = params.status;
       }
       if (params.instructorId) {
-        where.instructorId = params.instructorId;
+        where.AND = [
+          { OR: [
+            { instructorId: params.instructorId },
+            { coInstructors: { some: { instructorId: params.instructorId } } },
+          ] },
+        ];
       }
     }
 
@@ -286,15 +314,7 @@ export class CourseService implements ICourseService {
         skip,
         take: limit,
         orderBy: { createdAt: "desc" },
-        include: {
-          instructor: {
-            select: {
-              id: true,
-              fullName: true,
-              avatarUrl: true,
-            },
-          },
-        },
+        include: courseInstructorInclude,
       }),
     ]);
 
@@ -313,7 +333,12 @@ export class CourseService implements ICourseService {
   ): Promise<CourseDto> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true, status: true },
+      select: {
+        id: true,
+        instructorId: true,
+        status: true,
+        coInstructors: { select: { instructorId: true } },
+      },
     });
 
     if (!course) {
@@ -323,7 +348,7 @@ export class CourseService implements ICourseService {
     // Checking publish permission
     const canPublish =
       hasPermission(user.role, "course:publish") ||
-      (user.role === "INSTRUCTOR" && course.instructorId === user.id);
+      (user.role === "INSTRUCTOR" && this.accessService.canManageCourse(user, course));
 
     if (!canPublish) {
       throw new Error("Forbidden: You do not have permission to publish this course");
@@ -338,15 +363,7 @@ export class CourseService implements ICourseService {
         status: newStatus,
         publishedAt,
       },
-      include: {
-        instructor: {
-          select: {
-            id: true,
-            fullName: true,
-            avatarUrl: true,
-          },
-        },
-      },
+      include: courseInstructorInclude,
     });
 
     return updated;
@@ -355,7 +372,11 @@ export class CourseService implements ICourseService {
   async deleteCourse(courseId: string, user: AuthenticatedUser): Promise<void> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true },
+      select: {
+        id: true,
+        instructorId: true,
+        coInstructors: { select: { instructorId: true } },
+      },
     });
 
     if (!course) {
@@ -365,7 +386,7 @@ export class CourseService implements ICourseService {
     // Only Admin can delete or Instructor if permitted
     const canDelete =
       hasPermission(user.role, "course:delete") ||
-      (user.role === "INSTRUCTOR" && course.instructorId === user.id);
+      (user.role === "INSTRUCTOR" && this.accessService.canManageCourse(user, course));
 
     if (!canDelete) {
       throw new Error("Forbidden: You do not have permission to delete this course");

@@ -27,7 +27,17 @@ export interface CourseDto {
     id: string;
     fullName: string;
     avatarUrl: string | null;
+    bio: string | null;
   };
+  coInstructors?: {
+    instructorId: string;
+    instructor: {
+      id: string;
+      fullName: string;
+      avatarUrl: string | null;
+      bio: string | null;
+    };
+  }[];
 }
 
 export interface CreateCourseInput {
@@ -66,6 +76,7 @@ export interface UpdateCourseInput {
   isArchived?: boolean;
   durationSeconds?: number;
   status?: CourseStatus;
+  coInstructorIds?: string[];
 }
 
 export interface CourseFilterParams {

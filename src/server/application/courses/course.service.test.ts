@@ -17,6 +17,9 @@ describe("CourseService", () => {
     enrollment: {
       findUnique: ReturnType<typeof vi.fn>;
     };
+    user: {
+      findMany: ReturnType<typeof vi.fn>;
+    };
   };
   let mockAccessService: { canManageCourse: ReturnType<typeof vi.fn> };
   let courseService: CourseService;
@@ -55,6 +58,9 @@ describe("CourseService", () => {
       },
       enrollment: {
         findUnique: vi.fn(),
+      },
+      user: {
+        findMany: vi.fn(),
       },
     };
 
@@ -134,6 +140,64 @@ describe("CourseService", () => {
           title: "Hijacked Title",
         })
       ).rejects.toThrow("Forbidden");
+    });
+
+    it("assigns existing instructors as co-instructors for admins", async () => {
+      const adminUser: AuthenticatedUser = {
+        ...instructorUser,
+        id: "admin-1",
+        role: "ADMIN",
+      };
+      mockPrisma.course.findUnique.mockResolvedValue({
+        id: "course-1",
+        instructorId: instructorUser.id,
+        title: "Course",
+        status: "DRAFT",
+        coInstructors: [],
+      });
+      mockPrisma.user.findMany.mockResolvedValue([{ id: otherInstructor.id }]);
+      mockPrisma.course.update.mockResolvedValue({
+        id: "course-1",
+        title: "Course",
+        instructorId: instructorUser.id,
+        coInstructors: [{ instructorId: otherInstructor.id }],
+      });
+
+      await courseService.updateCourse("course-1", adminUser, {
+        coInstructorIds: [otherInstructor.id],
+      });
+
+      expect(mockPrisma.user.findMany).toHaveBeenCalledWith({
+        where: { id: { in: [otherInstructor.id] }, role: "INSTRUCTOR" },
+        select: { id: true },
+      });
+      expect(mockPrisma.course.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            coInstructors: {
+              deleteMany: {},
+              create: [{ instructor: { connect: { id: otherInstructor.id } } }],
+            },
+          }),
+        })
+      );
+    });
+
+    it("does not allow instructors to assign co-instructors", async () => {
+      mockPrisma.course.findUnique.mockResolvedValue({
+        id: "course-1",
+        instructorId: instructorUser.id,
+        title: "Course",
+        status: "DRAFT",
+        coInstructors: [],
+      });
+
+      await expect(
+        courseService.updateCourse("course-1", instructorUser, {
+          coInstructorIds: [otherInstructor.id],
+        })
+      ).rejects.toThrow("Only admins can assign course instructors");
+      expect(mockPrisma.course.update).not.toHaveBeenCalled();
     });
   });
 

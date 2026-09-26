@@ -28,7 +28,7 @@ export class QuizService implements IQuizService {
   ): Promise<QuizDto> {
     const course = await this.prisma.course.findUnique({
       where: { id: input.courseId },
-      select: { id: true, instructorId: true },
+      select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {
@@ -80,7 +80,7 @@ export class QuizService implements IQuizService {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -142,7 +142,7 @@ export class QuizService implements IQuizService {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -177,7 +177,7 @@ export class QuizService implements IQuizService {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -232,7 +232,7 @@ export class QuizService implements IQuizService {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
-        course: { select: { id: true, status: true, instructorId: true } },
+        course: { select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
         questions: {
           orderBy: { sortOrder: "asc" },
           include: {
@@ -280,7 +280,19 @@ export class QuizService implements IQuizService {
   ): Promise<QuizQuestionDto> {
     const question = await this.prisma.quizQuestion.findUnique({
       where: { id: questionId },
-      include: { quiz: { include: { course: { select: { id: true, instructorId: true } } } } },
+      include: {
+        quiz: {
+          include: {
+            course: {
+              select: {
+                id: true,
+                instructorId: true,
+                coInstructors: { select: { instructorId: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!question) throw new Error("Quiz question not found");
@@ -325,7 +337,19 @@ export class QuizService implements IQuizService {
   async deleteQuestion(questionId: string, user: AuthenticatedUser): Promise<void> {
     const question = await this.prisma.quizQuestion.findUnique({
       where: { id: questionId },
-      include: { quiz: { include: { course: { select: { id: true, instructorId: true } } } } },
+      include: {
+        quiz: {
+          include: {
+            course: {
+              select: {
+                id: true,
+                instructorId: true,
+                coInstructors: { select: { instructorId: true } },
+              },
+            },
+          },
+        },
+      },
     });
 
     if (!question) throw new Error("Quiz question not found");
@@ -342,7 +366,7 @@ export class QuizService implements IQuizService {
   ): Promise<QuizDto[]> {
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true },
+      select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {
@@ -376,7 +400,7 @@ export class QuizService implements IQuizService {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
-        course: { select: { id: true, status: true, instructorId: true } },
+        course: { select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -599,7 +623,7 @@ export class QuizService implements IQuizService {
       include: {
         quiz: {
           include: {
-            course: { select: { id: true, instructorId: true } },
+            course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
           },
         },
         answers: true,
@@ -613,7 +637,8 @@ export class QuizService implements IQuizService {
     const isOwner = attempt.userId === user.id;
     const isAdmin = user.role === "ADMIN";
     const isInstructor =
-      user.role === "INSTRUCTOR" && attempt.quiz.course.instructorId === user.id;
+      user.role === "INSTRUCTOR" &&
+      this.accessService.canManageCourse(user, attempt.quiz.course);
 
     if (!isOwner && !isAdmin && !isInstructor) {
       throw new Error("Forbidden: You cannot view this attempt");
@@ -633,7 +658,7 @@ export class QuizService implements IQuizService {
     const quiz = await this.prisma.quiz.findUnique({
       where: { id: quizId },
       include: {
-        course: { select: { id: true, instructorId: true } },
+        course: { select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } } },
       },
     });
 
@@ -642,7 +667,7 @@ export class QuizService implements IQuizService {
     }
 
     const isInstructor =
-      user.role === "INSTRUCTOR" && quiz.course.instructorId === user.id;
+      user.role === "INSTRUCTOR" && this.accessService.canManageCourse(user, quiz.course);
 
     if (!isSelf && !isAdmin && !isInstructor) {
       throw new Error("Forbidden: You cannot view attempts for this user");
@@ -684,7 +709,12 @@ export class QuizService implements IQuizService {
     if (user.role === "INSTRUCTOR") {
       where.quiz = {
         ...(where.quiz || {}),
-        course: { instructorId: user.id },
+        course: {
+          OR: [
+            { instructorId: user.id },
+            { coInstructors: { some: { instructorId: user.id } } },
+          ],
+        },
       };
     }
 

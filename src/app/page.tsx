@@ -336,11 +336,11 @@ export default function HomePage() {
                   key={course.id}
                   className="home-course-card flex flex-col overflow-hidden border-slate-200/80 hover:border-blue-300 hover:shadow-[0_22px_45px_rgba(37,99,235,0.08)] transition-all duration-200 group bg-white rounded-2xl"
                 >
-                  <div className="relative aspect-video w-full bg-gradient-to-tr from-[#0B2D5B] to-[#2563EB] overflow-hidden">
+                  <div className="relative h-48 w-full bg-gradient-to-tr from-[#0B2D5B] to-[#2563EB] overflow-hidden">
                     {course.coverImageUrl ? (
                       <div
                         style={{ backgroundImage: `url(${course.coverImageUrl})` }}
-                        className="h-full w-full bg-cover bg-center bg-no-repeat"
+                        className="h-full w-full bg-contain bg-center bg-no-repeat"
                       />
                     ) : (
                       <div className="flex h-full w-full items-center justify-center p-6 text-white text-center">

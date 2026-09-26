@@ -159,6 +159,7 @@ model User {
 
   sessions          Session[]
   instructedCourses Course[]         @relation("InstructorCourses")
+  coInstructedCourses CourseInstructor[]
   enrollments       Enrollment[]
   lessonProgress    LessonProgress[]
   quizAttempts      QuizAttempt[]
@@ -223,6 +224,7 @@ model Course {
   updatedAt        DateTime         @updatedAt
 
   instructor       User             @relation("InstructorCourses", fields: [instructorId], references: [id], onDelete: Restrict)
+  coInstructors    CourseInstructor[]
   sections         CourseSection[]
   enrollments      Enrollment[]
   lessonProgress   LessonProgress[]
@@ -287,6 +289,19 @@ model Lesson {
   @@index([sectionId, sortOrder])
   @@index([isPublished])
   @@map("lessons")
+}
+
+model CourseInstructor {
+  courseId     String
+  instructorId String
+  createdAt    DateTime @default(now())
+
+  course       Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor   User     @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+
+  @@id([courseId, instructorId])
+  @@index([instructorId])
+  @@map("course_instructors")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

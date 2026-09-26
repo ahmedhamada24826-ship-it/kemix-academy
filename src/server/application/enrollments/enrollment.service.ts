@@ -258,7 +258,10 @@ export class EnrollmentService implements IEnrollmentService {
     // If instructor, only allow filtering for their courses
     if (user.role === "INSTRUCTOR") {
       where.course = {
-        instructorId: user.id,
+        OR: [
+          { instructorId: user.id },
+          { coInstructors: { some: { instructorId: user.id } } },
+        ],
       };
     }
 

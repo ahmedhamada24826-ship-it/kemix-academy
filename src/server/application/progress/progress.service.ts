@@ -258,7 +258,7 @@ export class ProgressService implements IProgressService {
 
     const course = await this.prisma.course.findUnique({
       where: { id: courseId },
-      select: { id: true, instructorId: true },
+      select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
     });
 
     if (!course) {
@@ -266,7 +266,8 @@ export class ProgressService implements IProgressService {
     }
 
     const isCourseInstructor =
-      requestingUser.role === "INSTRUCTOR" && course.instructorId === requestingUser.id;
+      requestingUser.role === "INSTRUCTOR" &&
+      this.accessService.canManageCourse(requestingUser, course);
 
     if (!isSelf && !isAdmin && !isCourseInstructor) {
       throw new Error("Forbidden: You do not have permission to view this progress");

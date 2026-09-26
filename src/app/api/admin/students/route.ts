@@ -24,7 +24,12 @@ export async function GET(req: NextRequest) {
     }
 
     if (user.role === "INSTRUCTOR") {
-      where.course = { instructorId: user.id };
+      where.course = {
+        OR: [
+          { instructorId: user.id },
+          { coInstructors: { some: { instructorId: user.id } } },
+        ],
+      };
     }
 
     if (search) {

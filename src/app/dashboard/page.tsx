@@ -354,11 +354,11 @@ function EnrollmentGrid({ list }: { list: EnrollmentItem[] }) {
         return (
           <Card key={item.id} className="flex flex-col bg-white border-slate-200/90 shadow-sm hover:shadow-md transition-all overflow-hidden">
             {item.course.coverImageUrl && (
-              <div className="aspect-video w-full overflow-hidden bg-slate-100">
+              <div className="h-36 w-full overflow-hidden bg-slate-100">
                 <img
                   src={item.course.coverImageUrl}
                   alt={item.course.title}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-contain"
                 />
               </div>
             )}

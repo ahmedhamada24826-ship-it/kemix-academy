@@ -35,6 +35,7 @@ interface CourseItem {
   instructor?: {
     fullName: string;
   };
+  coInstructors?: { instructor: { fullName: string } }[];
 }
 
 export default function AdminCoursesPage() {
@@ -257,7 +258,9 @@ export default function AdminCoursesPage() {
                       </Badge>
                     </td>
                     <td className="p-4 text-slate-600">
-                      {course.instructor?.fullName || "فريق كيميكس"}
+                      {[course.instructor?.fullName, ...(course.coInstructors ?? []).map(({ instructor }) => instructor.fullName)]
+                        .filter(Boolean)
+                        .join("، ") || "فريق كيميكس"}
                     </td>
                     <td className="p-4 text-left">
                       <div className="flex items-center justify-end gap-2">

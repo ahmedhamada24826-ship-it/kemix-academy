@@ -57,7 +57,7 @@ export class LessonService implements ILessonService {
       where: { id: sectionId },
       include: {
         course: {
-          select: { id: true, instructorId: true },
+          select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
         },
       },
     });
@@ -116,7 +116,7 @@ export class LessonService implements ILessonService {
         section: {
           include: {
             course: {
-              select: { id: true, instructorId: true },
+              select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
             },
           },
         },
@@ -172,7 +172,7 @@ export class LessonService implements ILessonService {
         section: {
           include: {
             course: {
-              select: { id: true, instructorId: true },
+              select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
             },
           },
         },
@@ -202,7 +202,7 @@ export class LessonService implements ILessonService {
         section: {
           include: {
             course: {
-              select: { id: true, status: true, instructorId: true },
+              select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
             },
           },
         },
@@ -267,7 +267,7 @@ export class LessonService implements ILessonService {
       where: { id: sectionId },
       include: {
         course: {
-          select: { id: true, status: true, instructorId: true },
+          select: { id: true, status: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
         },
       },
     });
@@ -302,7 +302,7 @@ export class LessonService implements ILessonService {
       where: { id: sectionId },
       include: {
         course: {
-          select: { id: true, instructorId: true },
+          select: { id: true, instructorId: true, coInstructors: { select: { instructorId: true } } },
         },
       },
     });

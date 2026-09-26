@@ -34,7 +34,16 @@ export async function GET(req: NextRequest) {
       where: courseId
         ? { task: { courseId } }
         : user.role === "INSTRUCTOR"
-        ? { task: { course: { instructorId: user.id } } }
+        ? {
+            task: {
+              course: {
+                OR: [
+                  { instructorId: user.id },
+                  { coInstructors: { some: { instructorId: user.id } } },
+                ],
+              },
+            },
+          }
         : {},
     });
 
@@ -44,7 +53,16 @@ export async function GET(req: NextRequest) {
         ...(courseId
           ? { task: { courseId } }
           : user.role === "INSTRUCTOR"
-          ? { task: { course: { instructorId: user.id } } }
+          ? {
+              task: {
+                course: {
+                  OR: [
+                    { instructorId: user.id },
+                    { coInstructors: { some: { instructorId: user.id } } },
+                  ],
+                },
+              },
+            }
           : {}),
       },
     });

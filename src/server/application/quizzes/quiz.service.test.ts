@@ -275,7 +275,14 @@ describe("QuizService", () => {
         expect.objectContaining({
           where: expect.objectContaining({
             quizId: "quiz-1",
-            quiz: { course: { instructorId: instructorUser.id } },
+            quiz: {
+              course: {
+                OR: [
+                  { instructorId: instructorUser.id },
+                  { coInstructors: { some: { instructorId: instructorUser.id } } },
+                ],
+              },
+            },
           }),
           include: expect.objectContaining({
             user: { select: { id: true, fullName: true, email: true } },

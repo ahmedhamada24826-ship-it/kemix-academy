@@ -18,10 +18,20 @@ export class CourseAccessService {
    */
   canManageCourse(
     user: AuthenticatedUser,
-    course: { id: string; instructorId: string }
+    course: {
+      id: string;
+      instructorId: string;
+      coInstructors?: { instructorId: string }[];
+    }
   ): boolean {
     if (user.role === "ADMIN") return true;
-    if (user.role === "INSTRUCTOR" && course.instructorId === user.id) return true;
+    if (
+      user.role === "INSTRUCTOR" &&
+      (course.instructorId === user.id ||
+        course.coInstructors?.some((coInstructor) => coInstructor.instructorId === user.id))
+    ) {
+      return true;
+    }
     return false;
   }
 
@@ -30,7 +40,12 @@ export class CourseAccessService {
    */
   async canAccessCourse(
     user: AuthenticatedUser | null,
-    course: { id: string; status: CourseStatus; instructorId: string }
+    course: {
+      id: string;
+      status: CourseStatus;
+      instructorId: string;
+      coInstructors?: { instructorId: string }[];
+    }
   ): Promise<CourseAccessDecision> {
     if (user && this.canManageCourse(user, course)) {
       return { allowed: true, isEnrolled: true, isOwnerOrAdmin: true };
@@ -91,7 +106,12 @@ export class CourseAccessService {
       isFreePreview: boolean;
       section: {
         courseId: string;
-        course: { id: string; status: CourseStatus; instructorId: string };
+        course: {
+          id: string;
+          status: CourseStatus;
+          instructorId: string;
+          coInstructors?: { instructorId: string }[];
+        };
       };
     }
   ): Promise<CourseAccessDecision> {
