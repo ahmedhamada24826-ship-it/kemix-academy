@@ -20,6 +20,11 @@ export default function AdminInstructorsPage() {
   const [isCreating, setIsCreating] = useState(false);
   const [createError, setCreateError] = useState<string | null>(null);
   const [createSuccess, setCreateSuccess] = useState(false);
+  const [promotionEmail, setPromotionEmail] = useState("");
+  const [promotionBio, setPromotionBio] = useState("");
+  const [isPromoting, setIsPromoting] = useState(false);
+  const [promotionError, setPromotionError] = useState<string | null>(null);
+  const [promotionSuccess, setPromotionSuccess] = useState(false);
   const [saveErrors, setSaveErrors] = useState<Record<string, string>>({});
   const [savedIds, setSavedIds] = useState<string[]>([]);
   const [fullName, setFullName] = useState("");
@@ -83,6 +88,38 @@ export default function AdminInstructorsPage() {
       setCreateError(error instanceof Error ? error.message : "فشل إنشاء حساب المدرب");
     } finally {
       setIsCreating(false);
+    }
+  };
+
+  const handlePromoteStudent = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsPromoting(true);
+    setPromotionError(null);
+    setPromotionSuccess(false);
+
+    try {
+      const response = await fetch("/api/admin/instructors", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: promotionEmail.trim(),
+          bio: promotionBio.trim() || undefined,
+        }),
+      });
+      const result = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(result?.error?.message || "فشل ترقية الحساب");
+
+      const promotedInstructor = result.data.instructor as Instructor;
+      setInstructors((current) => [...current, promotedInstructor].sort((a, b) =>
+        a.fullName.localeCompare(b.fullName, "ar")
+      ));
+      setPromotionEmail("");
+      setPromotionBio("");
+      setPromotionSuccess(true);
+    } catch (error) {
+      setPromotionError(error instanceof Error ? error.message : "فشل ترقية الحساب");
+    } finally {
+      setIsPromoting(false);
     }
   };
 
@@ -167,6 +204,44 @@ export default function AdminInstructorsPage() {
             </Button>
             {createSuccess && <span className="text-xs text-emerald-700">تمت إضافة المدرب.</span>}
             {createError && <span role="alert" className="text-xs text-red-600">{createError}</span>}
+          </div>
+        </form>
+      </section>
+
+      <section className="border-b border-slate-200 pb-6">
+        <h2 className="mb-1 text-sm font-bold text-slate-800">ترقية حساب طالب موجود</h2>
+        <p className="mb-3 text-xs text-slate-500">
+          يتحول الحساب إلى مدرب مع الاحتفاظ بالبريد وكلمة المرور الحالية.
+        </p>
+        <form onSubmit={handlePromoteStudent} className="grid gap-3 md:grid-cols-2">
+          <Input
+            required
+            type="email"
+            value={promotionEmail}
+            onChange={(event) => setPromotionEmail(event.target.value)}
+            placeholder="البريد الإلكتروني المسجل"
+            aria-label="بريد حساب الطالب المراد ترقيته"
+          />
+          <Textarea
+            value={promotionBio}
+            onChange={(event) => setPromotionBio(event.target.value)}
+            maxLength={2000}
+            rows={2}
+            placeholder="نبذة المدرب (اختياري)"
+            aria-label="نبذة المدرب بعد الترقية"
+          />
+          <div className="flex flex-wrap items-center gap-3 md:col-span-2">
+            <Button type="submit" variant="outline" disabled={isPromoting}>
+              {isPromoting ? "جارٍ التحقق والترقية" : "ترقية إلى مدرب"}
+            </Button>
+            {promotionSuccess && (
+              <span className="text-xs text-emerald-700">
+                تمت الترقية؛ على المستخدم تسجيل الخروج والدخول مجددًا.
+              </span>
+            )}
+            {promotionError && (
+              <span role="alert" className="text-xs text-red-600">{promotionError}</span>
+            )}
           </div>
         </form>
       </section>

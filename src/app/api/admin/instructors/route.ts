@@ -14,13 +14,23 @@ const CreateInstructorSchema = z.object({
   bio: z.string().trim().max(2000).optional(),
 });
 
-const UpdateInstructorSchema = z.object({
+const UpdateInstructorByIdSchema = z.object({
   instructorId: z.string().uuid(),
   fullName: z.string().trim().min(2).max(120).optional(),
   bio: z.string().trim().max(2000).nullable().optional(),
 }).refine((value) => value.fullName !== undefined || value.bio !== undefined, {
   message: "At least one instructor field must be provided",
 });
+
+const PromoteInstructorSchema = z.object({
+  email: emailSchema,
+  bio: z.string().trim().max(2000).nullable().optional(),
+}).strict();
+
+const UpdateInstructorSchema = z.union([
+  UpdateInstructorByIdSchema,
+  PromoteInstructorSchema,
+]);
 
 async function requireAdmin(req: NextRequest) {
   const user = await getCurrentUser(req);
@@ -108,6 +118,33 @@ export async function PATCH(req: NextRequest) {
         400,
         parseResult.error.flatten().fieldErrors
       );
+    }
+
+    if ("email" in parseResult.data) {
+      const existingByEmail = await prisma.user.findUnique({
+        where: { email: parseResult.data.email },
+        select: { id: true, role: true },
+      });
+      if (!existingByEmail) {
+        return apiError("USER_NOT_FOUND", "لا يوجد حساب مسجل بهذا البريد الإلكتروني.", 404);
+      }
+      if (existingByEmail.role === "INSTRUCTOR") {
+        return apiError("ALREADY_INSTRUCTOR", "هذا الحساب مسجل كمدرب بالفعل.", 409);
+      }
+      if (existingByEmail.role !== "STUDENT") {
+        return apiError("INVALID_ROLE", "يمكن ترقية حساب الطالب فقط إلى مدرب.", 409);
+      }
+
+      const instructor = await prisma.user.update({
+        where: { id: existingByEmail.id },
+        data: {
+          role: "INSTRUCTOR",
+          ...(parseResult.data.bio !== undefined && { bio: parseResult.data.bio }),
+        },
+        select: { id: true, fullName: true, email: true, avatarUrl: true, bio: true },
+      });
+
+      return apiSuccess({ instructor });
     }
 
     const existing = await prisma.user.findFirst({
