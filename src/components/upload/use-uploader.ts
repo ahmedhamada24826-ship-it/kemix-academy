@@ -107,7 +107,7 @@ function putToStorage(
     };
 
     xhr.onerror = () =>
-      reject(new Error("تعذر الاتصال بمخزن الملفات. تأكد من تشغيل خدمة التخزين (MinIO)."));
+      reject(new Error("تعذر الاتصال بمخزن الملفات (S3/MinIO). تأكد من إعدادات التخزين أو استخدام خدمة رفع الصور السحابية."));
     xhr.ontimeout = () => reject(new Error("انتهت مهلة رفع الملف."));
     xhr.send(file);
   });

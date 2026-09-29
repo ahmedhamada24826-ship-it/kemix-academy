@@ -11,6 +11,7 @@ import {
   HomepageCmsEditor,
   type HomepageCms,
 } from "@/components/admin/homepage-cms-editor";
+import { ImageUploadField } from "@/components/upload/image-upload-field";
 import {
   Settings,
   Save,
@@ -274,32 +275,17 @@ export default function AdminSettingsPage() {
               <CardContent className="space-y-5">
                 {(
                   [
-                    { key: "logoUrl", label: "شعار الهيدر (Logo)", hint: "يظهر أعلى جميع الصفحات." },
+                    { key: "logoUrl", label: "شعار الهيدر (Logo)", hint: "يظهر أعلى جميع الصفحات (PNG أو SVG بخلفية شفافة)." },
                     { key: "footerLogoUrl", label: "شعار التذييل (Footer Logo)", hint: "يظهر في تذييل الصفحة." },
-                    { key: "faviconUrl", label: "أيقونة المتصفح (Favicon)", hint: "أيقونة التبويب في المتصفح." },
+                    { key: "faviconUrl", label: "أيقونة المتصفح (Favicon)", hint: "أيقونة التبويب في المتصفح (ICO أو PNG مربعة)." },
                   ] as const
                 ).map((item) => (
-                  <div key={item.key} className="space-y-2 p-3 rounded-xl bg-slate-50 border border-slate-200">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <p className="text-xs font-bold text-slate-800">{item.label}</p>
-                        <p className="text-[11px] text-slate-500">{item.hint}</p>
-                      </div>
-                      {settings[item.key] ? (
-                        <img
-                          src={settings[item.key] as string}
-                          alt={item.label}
-                          className="h-10 w-auto max-w-[140px] rounded-md border border-slate-200 bg-white object-contain p-1"
-                        />
-                      ) : (
-                        <span className="text-[10px] text-slate-400 font-mono">لا يوجد شعار</span>
-                      )}
-                    </div>
-                    <Input
+                  <div key={item.key} className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                    <ImageUploadField
+                      label={item.label}
+                      hint={item.hint}
                       value={(settings[item.key] as string) || ""}
-                      onChange={(e) => setField(item.key, e.target.value)}
-                      placeholder="https://..."
-                      className="font-mono text-xs dir-ltr text-left h-9"
+                      onChange={(url) => setField(item.key, url || null)}
                     />
                   </div>
                 ))}

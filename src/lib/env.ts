@@ -20,6 +20,9 @@ const envSchema = z.object({
   INITIAL_ADMIN_NAME: z.string().optional(),
 
 
+  // ImgBB Image Hosting
+  IMGBB_API_KEY: z.string().optional(),
+
   // S3-Compatible Object Storage
   S3_ENDPOINT: z.string().optional(),
   S3_REGION: z.string().default("us-east-1"),

@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileDropzone } from "@/components/upload/file-dropzone";
+import { ImageDropzone } from "@/components/upload/image-dropzone";
 import type { UploadedAsset } from "@/components/upload/use-uploader";
 import {
   HardDrive,
@@ -108,20 +109,19 @@ export default function AdminMediaPage() {
           </div>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          <FileDropzone
-            category="IMAGE"
-            visibility="PUBLIC"
-            maxSizeMb={10}
-            accept={["image/*"]}
-            label="رفع صورة"
-            hint="PNG, JPG, WebP أو SVG حتى 10MB"
-            onUploaded={handleUploaded}
+          <ImageDropzone
+            maxSizeMb={32}
+            label="رفع صورة (ImgBB السحابي)"
+            hint="PNG, JPG, WebP, GIF أو SVG حتى 32MB — حفظ دائم"
+            onUploaded={async () => {
+              await loadFiles();
+            }}
           />
           <FileDropzone
             category="OTHER"
             visibility="PROTECTED"
             maxSizeMb={200}
-            label="رفع ملف"
+            label="رفع ملفات (S3 / التخزين المحمي)"
             hint="ملفات الدروس والبيانات حتى 200MB"
             onUploaded={handleUploaded}
           />

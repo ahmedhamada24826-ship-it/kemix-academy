@@ -387,45 +387,48 @@ export default function AdminCourseDetailPage({
 
   const handleCoverFileSelect = async (file: File) => {
     setCoverUploadError(null);
-    if (!file.type.match(/^image\/(png|jpeg|jpg|webp)$/)) {
+    if (!file.type.match(/^image\/(png|jpeg|jpg|webp|gif|svg\+xml)$/)) {
       setCoverUploadError("نوع الملف غير مدعوم. يُرجى اختيار صورة PNG أو JPG أو WebP.");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      setCoverUploadError("حجم الصورة كبير جداً (الحد الأقصى 5 ميجابايت).");
+    if (file.size > 32 * 1024 * 1024) {
+      setCoverUploadError("حجم الصورة كبير جداً (الحد الأقصى 32 ميجابايت).");
       return;
     }
     setCoverFile(file);
     setCoverPreview(URL.createObjectURL(file));
-
     setCoverUploading(true);
-    try {
-      const asset = await uploader.upload(file, {
-        category: "COURSE_COVER",
-        visibility: "PUBLIC",
-        courseId,
-        maxSizeMb: 5,
-        accept: ["image/png", "image/jpeg", "image/webp"],
-      });
-      const uploadedCoverUrl =
-        asset.publicUrl ||
-        (/^https?:\/\//i.test(asset.storageKey) ? asset.storageKey : null) ||
-        `/api/files/${asset.id}/access?redirect=1`;
 
-      if (uploadedCoverUrl) {
-        setCoverUrl(uploadedCoverUrl);
-        setCoverFile(null);
-        setCoverPreview(null);
-        setCoverTouched(true);
-      } else {
-        setCoverUploadError("تم الرفع لكن لم يتم استرجاع رابط الصورة.");
+    try {
+      // Upload via ImgBB proxy (no MinIO/S3 required)
+      const formData = new FormData();
+      formData.append("image", file);
+
+      const res = await fetch("/api/files/imgbb-upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        throw new Error(
+          json?.error?.message ||
+          (res.status === 500 ? "مفتاح ImgBB غير مضبوط — أضف IMGBB_API_KEY في ملف .env" : "فشل رفع صورة الغلاف")
+        );
       }
+
+      const uploadedCoverUrl: string = json.data.url;
+      setCoverUrl(uploadedCoverUrl);
+      setCoverFile(null);
+      setCoverPreview(null);
+      setCoverTouched(true);
     } catch (err) {
       setCoverUploadError(err instanceof Error ? err.message : "فشل رفع الصورة. حاول مرة أخرى.");
     } finally {
       setCoverUploading(false);
     }
   };
+
 
   const handleRemoveCover = () => {
     setCoverUrl("");

@@ -4,17 +4,13 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { Image as ImageIcon } from "lucide-react";
-import { FileDropzone } from "./file-dropzone";
-import type { UploadCategory, UploadVisibility } from "./use-uploader";
+import { ImageDropzone } from "./image-dropzone";
 
 export interface ImageUploadFieldProps {
   label: string;
-  /** Current image URL (public URL or external link). */
+  /** Current image URL (ImgBB URL or external link). */
   value: string;
   onChange: (url: string) => void;
-  category?: UploadCategory;
-  visibility?: UploadVisibility;
-  courseId?: string;
   maxSizeMb?: number;
   hint?: string;
   previewClassName?: string;
@@ -23,15 +19,13 @@ export interface ImageUploadFieldProps {
 
 /**
  * Reusable image uploader + manual URL entry with live preview.
+ * Backed by ImgBB — no local MinIO/S3 required.
  * Powers course covers, header/footer logos and the favicon.
  */
 export function ImageUploadField({
   label,
   value,
   onChange,
-  category = "IMAGE",
-  visibility = "PUBLIC",
-  courseId,
   maxSizeMb = 10,
   hint,
   previewClassName,
@@ -82,18 +76,11 @@ export function ImageUploadField({
         </div>
       </div>
 
-      <FileDropzone
-        category={category}
-        visibility={visibility}
-        courseId={courseId}
+      <ImageDropzone
         maxSizeMb={maxSizeMb}
-        accept={["image/*"]}
         label="رفع صورة من الجهاز"
-        hint="الصيغ المدعومة: PNG, JPG, WEBP, SVG"
-        onUploaded={(asset) => {
-          const url = asset.publicUrl || `/api/files/${asset.id}/access?redirect=1`;
-          onChange(url);
-        }}
+        hint="الصيغ المدعومة: PNG, JPG, WEBP, GIF, SVG"
+        onUploaded={(result) => onChange(result.url)}
       />
     </div>
   );

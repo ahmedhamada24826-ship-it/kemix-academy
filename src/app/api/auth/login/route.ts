@@ -24,7 +24,8 @@ export async function POST(req: NextRequest) {
     // 1. Defense-in-depth CSRF same-origin check for browser clients
     const origin = req.headers.get("origin");
     const referer = req.headers.get("referer");
-    if ((origin || referer) && !validateSameOrigin(origin, referer)) {
+    const host = req.headers.get("x-forwarded-host") || req.headers.get("host");
+    if ((origin || referer) && !validateSameOrigin(origin, referer, host)) {
       return apiError("FORBIDDEN", "Cross-origin requests forbidden", 403);
     }
 
