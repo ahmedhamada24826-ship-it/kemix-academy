@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { prisma as defaultPrisma } from "@/lib/prisma";
 import { AuthenticatedUser } from "@/server/domain/auth/auth.types";
 import {
@@ -8,10 +8,17 @@ import {
 } from "@/server/domain/live-lectures/live-lecture.types";
 import { LiveLectureStatus } from "@/types";
 
+type LiveLectureWithRelations = Prisma.LiveLectureGetPayload<{
+  include: {
+    course: { select: { id: true; title: true; slug: true; status: true } };
+    instructor: { select: { id: true; fullName: true; email: true } };
+  };
+}>;
+
 export class LiveLectureService {
   constructor(private readonly prisma: PrismaClient = defaultPrisma) {}
 
-  private mapLecture(lecture: any): LiveLectureDto {
+  private mapLecture(lecture: LiveLectureWithRelations): LiveLectureDto {
     return {
       id: lecture.id,
       title: lecture.title,
@@ -51,7 +58,7 @@ export class LiveLectureService {
   }
 
   async listLecturesForUser(user: AuthenticatedUser, courseId?: string): Promise<LiveLectureDto[]> {
-    const where: any = {};
+    const where: Prisma.LiveLectureWhereInput = {};
 
     if (courseId) {
       where.courseId = courseId;
@@ -166,7 +173,7 @@ export class LiveLectureService {
         scheduledAt: new Date(input.scheduledAt),
         durationMinutes: input.durationMinutes ?? 60,
         description: input.description ?? null,
-        status: (input.status ?? "SCHEDULED") as any,
+        status: input.status ?? "SCHEDULED",
       },
       include: {
         course: { select: { id: true, title: true, slug: true, status: true } },
@@ -192,7 +199,7 @@ export class LiveLectureService {
         ...(input.scheduledAt !== undefined ? { scheduledAt: new Date(input.scheduledAt) } : {}),
         ...(input.durationMinutes !== undefined ? { durationMinutes: input.durationMinutes } : {}),
         ...(input.description !== undefined ? { description: input.description } : {}),
-        ...(input.status !== undefined ? { status: input.status as any } : {}),
+        ...(input.status !== undefined ? { status: input.status } : {}),
         ...(input.youtubeBroadcastId !== undefined ? { youtubeBroadcastId: input.youtubeBroadcastId } : {}),
         ...(input.youtubeVideoId !== undefined ? { youtubeVideoId: input.youtubeVideoId } : {}),
         ...(input.youtubeUrl !== undefined ? { youtubeUrl: input.youtubeUrl } : {}),

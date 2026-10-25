@@ -1,10 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
+import { PrismaClient } from "@prisma/client";
 import { LiveLectureService } from "./live-lecture.service";
 import { AuthenticatedUser } from "@/server/domain/auth/auth.types";
 
 describe("LiveLectureService", () => {
   it("allows admins to view any scheduled lecture", async () => {
-    const prisma: any = {
+    const prisma = {
       liveLecture: {
         findMany: vi.fn().mockResolvedValue([]),
       },
@@ -19,7 +20,7 @@ describe("LiveLectureService", () => {
       },
     };
 
-    const service = new LiveLectureService(prisma);
+    const service = new LiveLectureService(prisma as unknown as PrismaClient);
     const adminUser: AuthenticatedUser = {
       id: "admin-1",
       email: "admin@kemix.academy",
@@ -35,7 +36,7 @@ describe("LiveLectureService", () => {
   });
 
   it("allows enrolled students to list lectures for an accessible course", async () => {
-    const prisma: any = {
+    const prisma = {
       liveLecture: {
         findMany: vi.fn().mockResolvedValue([
           {
@@ -59,7 +60,7 @@ describe("LiveLectureService", () => {
       },
     };
 
-    const service = new LiveLectureService(prisma);
+    const service = new LiveLectureService(prisma as unknown as PrismaClient);
     const studentUser: AuthenticatedUser = {
       id: "student-1",
       email: "student@kemix.academy",
