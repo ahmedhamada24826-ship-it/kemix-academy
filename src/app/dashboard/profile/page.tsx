@@ -21,7 +21,7 @@ export default function StudentProfilePage() {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8" dir="rtl">
+    <div className="dashboard-page min-h-screen py-10 px-4 sm:px-6 lg:px-8" dir="rtl">
       <div className="container mx-auto max-w-2xl space-y-6">
         <div className="flex items-center justify-between">
           <div>

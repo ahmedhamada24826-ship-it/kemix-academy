@@ -149,7 +149,7 @@ export default function StudentDashboardPage() {
   );
 
   return (
-    <div className="bg-slate-50 min-h-screen py-8 px-4 sm:px-6 lg:px-8" dir="rtl">
+    <div className="dashboard-page min-h-screen py-8 px-4 sm:px-6 lg:px-8" dir="rtl">
       <div className="container mx-auto max-w-7xl space-y-8">
         {/* Welcome Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm">

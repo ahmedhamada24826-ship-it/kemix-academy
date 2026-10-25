@@ -20,6 +20,7 @@ import {
   MessageCircle,
   History,
   Settings,
+  Video,
   UserCheck,
   BarChart3,
   Sliders,
@@ -75,6 +76,7 @@ export default function AdminLayout({
       title: "إدارة التعليم",
       items: [
         { label: "الكورسات", href: "/admin/courses", icon: <BookOpen className="h-4 w-4" /> },
+        { label: "المحاضرات المباشرة", href: "/admin/live-lectures", icon: <Video className="h-4 w-4" /> },
         { label: "إدارة المدربين", href: "/admin/instructors", icon: <GraduationCap className="h-4 w-4" /> },
         { label: "الملفات والوسائط", href: "/admin/media", icon: <HardDrive className="h-4 w-4" /> },
         { label: "التكليفات والواجبات", href: "/admin/tasks", icon: <FileCheck className="h-4 w-4" /> },

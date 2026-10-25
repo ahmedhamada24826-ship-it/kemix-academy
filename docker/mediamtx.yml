@@ -1,0 +1,23 @@
+protocols:
+  - "tcp"
+  - "udp"
+
+rtmp:
+  enabled: yes
+  address: :1935
+
+webrtc:
+  enabled: yes
+  address: :8555
+  candidates:
+    - 127.0.0.1:8555
+
+hls:
+  enabled: yes
+  address: :8888
+
+paths:
+  all:
+    source: publisher
+    sourceOnDemand: no
+    record: no

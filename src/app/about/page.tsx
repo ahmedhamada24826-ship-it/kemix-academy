@@ -38,7 +38,7 @@ export default function AboutPage() {
   ];
 
   return (
-    <div className="bg-slate-50 min-h-screen py-16 px-4 sm:px-6 lg:px-8 space-y-16" dir="rtl">
+    <div className="about-page min-h-screen py-16 px-4 sm:px-6 lg:px-8 space-y-16" dir="rtl">
       <div className="container mx-auto max-w-5xl space-y-16">
         {/* Header Hero */}
         <section className="text-center space-y-4 max-w-3xl mx-auto">

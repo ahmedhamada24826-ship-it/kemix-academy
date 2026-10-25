@@ -165,6 +165,16 @@ interface ProgressData {
   }[];
 }
 
+interface LiveLectureCard {
+  id: string;
+  title: string;
+  status: "SCHEDULED" | "READY" | "LIVE" | "PROCESSING" | "RECORDED" | "FAILED";
+  scheduledAt: string;
+  durationMinutes: number;
+  youtubeEmbedUrl?: string | null;
+  course?: { title?: string };
+}
+
 export default function CoursePlayerPage({
   params,
 }: {
@@ -181,6 +191,7 @@ export default function CoursePlayerPage({
   const [sections, setSections] = useState<Section[]>([]);
   const [courseQuizzes, setCourseQuizzes] = useState<Quiz[]>([]);
   const [progress, setProgress] = useState<ProgressData | null>(null);
+  const [liveLecture, setLiveLecture] = useState<LiveLectureCard | null>(null);
 
   // Active item state
   const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
@@ -228,11 +239,12 @@ export default function CoursePlayerPage({
 
     async function loadPlayerData() {
       try {
-        const [cRes, sRes, pRes, qRes] = await Promise.all([
+        const [cRes, sRes, pRes, qRes, liveRes] = await Promise.all([
           fetch(`/api/courses/${courseId}`),
           fetch(`/api/courses/${courseId}/sections`),
           fetch(`/api/courses/${courseId}/progress`),
           fetch(`/api/courses/${courseId}/quizzes`, { cache: "no-store" }),
+          fetch(`/api/live-lectures?courseId=${courseId}`, { cache: "no-store" }),
         ]);
 
         if (cRes.ok) {
@@ -256,6 +268,18 @@ export default function CoursePlayerPage({
             );
             setCourseQuizzes(details);
             await Promise.all(details.map((quiz) => loadQuizAttemptInfo(quiz.id)));
+          }
+        }
+
+        if (liveRes.ok) {
+          const liveJson = await liveRes.json();
+          if (liveJson.success && Array.isArray(liveJson.data?.lectures)) {
+            const currentLive =
+              liveJson.data.lectures.find((item: LiveLectureCard) => item.status === "LIVE") ||
+              liveJson.data.lectures.find((item: LiveLectureCard) => item.status === "RECORDED") ||
+              liveJson.data.lectures[0] ||
+              null;
+            setLiveLecture(currentLive);
           }
         }
 
@@ -659,6 +683,45 @@ export default function CoursePlayerPage({
     );
   }
 
+  const renderLiveLectureCard = () => {
+    if (!liveLecture) return null;
+
+    const isLive = liveLecture.status === "LIVE";
+    const isRecorded = liveLecture.status === "RECORDED" && liveLecture.youtubeEmbedUrl;
+
+    return (
+      <div className="rounded-2xl border border-slate-800 bg-[#07162C] p-4 shadow-xl" dir="rtl">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-cyan-400">Live Lecture</p>
+            <h2 className="mt-1 text-lg font-black text-white">{liveLecture.title}</h2>
+          </div>
+          <Badge className={isLive ? "bg-red-100 text-red-700" : "bg-emerald-100 text-emerald-700"}>
+            {isLive ? "LIVE 🔴" : "RECORDED"}
+          </Badge>
+        </div>
+
+        {isRecorded ? (
+          <div className="overflow-hidden rounded-xl border border-slate-700 bg-black">
+            <iframe
+              src={liveLecture.youtubeEmbedUrl ?? undefined}
+              title={liveLecture.title}
+              className="aspect-video w-full"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        ) : (
+          <div className="rounded-xl border border-slate-700 bg-slate-900/70 p-5 text-sm text-slate-300">
+            {isLive
+              ? "يتم بث هذه المحاضرة مباشرة داخل KEMIX Academy عبر طبقة البث الموثوقة. سيتم عرض الفيديو داخل المنصة عند توفر المصدر النهائي."
+              : "تمت معالجة المحاضرة. سيتم تشغيل الفيديو المسجل تلقائيًا عند توفر الرابط من YouTube."}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="flex flex-col h-[calc(100vh-64px)] bg-[#0B1329] text-slate-100 overflow-hidden" dir="rtl">
       {/* Player Top Navigation Bar */}
@@ -720,6 +783,8 @@ export default function CoursePlayerPage({
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         {/* Main Content Area */}
         <div className="flex-1 flex flex-col overflow-y-auto bg-[#0A1024]">
+          {renderLiveLectureCard()}
+
           {activeLesson ? (
             activeLesson.isUnlocked === false ? (
               /* Locked Lesson Screen */

@@ -8,14 +8,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Input } from "@/components/ui/input";
 import {
   Search,
-  BookOpen,
   Clock,
   Filter,
   Database,
-  Terminal,
-  Cpu,
-  BarChart3,
-  MessageCircle,
 } from "lucide-react";
 
 interface Course {
@@ -39,6 +34,15 @@ interface Course {
   };
 }
 
+const categories = [
+  { label: "جميع المسارات", value: "ALL" },
+  { label: "تحليل البيانات", value: "Data" },
+  { label: "البرمجة بـ Python", value: "Python" },
+  { label: "قواعد البيانات و SQL", value: "SQL" },
+  { label: "ذكاء الأعمال و Power BI", value: "Power BI" },
+  { label: "إكسل المتقدم والتحليل", value: "Excel" },
+];
+
 export default function CoursesCatalogPage() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -46,20 +50,20 @@ export default function CoursesCatalogPage() {
   const [selectedLevel, setSelectedLevel] = useState<string>("ALL");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
 
-  const categories = [
-    { label: "جميع المسارات", value: "ALL" },
-    { label: "بايثون وعلم البيانات", value: "Python" },
-    { label: "قواعد البيانات و SQL", value: "SQL" },
-    { label: "لوحات تحكم Power BI", value: "Power" },
-    { label: "إكسل المتقدم والتحليل", value: "Excel" },
-  ];
-
   const levels = [
     { label: "جميع المستويات", value: "ALL" },
     { label: "مبتدئ", value: "BEGINNER" },
     { label: "متوسط", value: "INTERMEDIATE" },
     { label: "متقدم", value: "ADVANCED" },
   ];
+
+  useEffect(() => {
+    const category = new URLSearchParams(window.location.search).get("category");
+    const matchedCategory = categories.find(
+      (item) => item.value.toLowerCase() === category?.toLowerCase()
+    );
+    if (matchedCategory) setSelectedCategory(matchedCategory.value);
+  }, []);
 
   useEffect(() => {
     async function fetchCourses() {
@@ -76,9 +80,19 @@ export default function CoursesCatalogPage() {
           if (json.success && json.data?.courses) {
             let list: Course[] = json.data.courses;
             if (selectedCategory !== "ALL") {
+              const categoryTerms: Record<string, string[]> = {
+                Data: ["data", "بيانات", "تحليل"],
+                Python: ["python", "بايثون"],
+                SQL: ["sql", "قواعد البيانات"],
+                "Power BI": ["power bi", "powerbi", "ذكاء الأعمال", "لوحات التحكم"],
+                Excel: ["excel", "إكسل", "اكسل"],
+              };
+              const terms = categoryTerms[selectedCategory] || [selectedCategory];
               list = list.filter((c) =>
-                c.title.toLowerCase().includes(selectedCategory.toLowerCase()) ||
-                (c.shortDescription && c.shortDescription.toLowerCase().includes(selectedCategory.toLowerCase()))
+                terms.some((term) =>
+                  c.title.toLowerCase().includes(term.toLowerCase()) ||
+                  (c.shortDescription && c.shortDescription.toLowerCase().includes(term.toLowerCase()))
+                )
               );
             }
             setCourses(list);
@@ -108,7 +122,7 @@ export default function CoursesCatalogPage() {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen py-10 px-4 sm:px-6 lg:px-8" dir="rtl">
+    <div className="catalog-page min-h-screen py-10 px-4 sm:px-6 lg:px-8" dir="rtl">
       <div className="container mx-auto max-w-7xl space-y-8">
         {/* Header Title */}
         <div className="space-y-3">

@@ -89,6 +89,14 @@ export type TaskSubmissionStatus = "SUBMITTED" | "LATE" | "REVIEWED" | "REJECTED
  */
 export type PaymentRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
 
+export type LiveLectureStatus =
+  | "SCHEDULED"
+  | "READY"
+  | "LIVE"
+  | "PROCESSING"
+  | "RECORDED"
+  | "FAILED";
+
 /**
  * Generic API response envelope
  */

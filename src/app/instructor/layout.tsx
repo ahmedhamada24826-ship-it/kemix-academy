@@ -17,6 +17,7 @@ import {
   BarChart3,
   Menu,
   X,
+  Video,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -54,6 +55,7 @@ export default function InstructorLayout({
   const navLinks = [
     { label: "نظرة عامة", href: "/instructor", icon: <LayoutDashboard className="h-4 w-4" /> },
     { label: "كورساتي التعليمية", href: "/instructor/courses", icon: <BookOpen className="h-4 w-4" /> },
+    { label: "محاضراتي المباشرة", href: "/instructor/live-lectures", icon: <Video className="h-4 w-4" /> },
     { label: "طلابي", href: "/instructor/students", icon: <Users className="h-4 w-4" /> },
     { label: "تسليمات التكليفات", href: "/instructor/tasks", icon: <FileCheck className="h-4 w-4" /> },
     { label: "نتائج الاختبارات", href: "/instructor/quizzes", icon: <HelpCircle className="h-4 w-4" /> },

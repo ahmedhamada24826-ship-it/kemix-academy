@@ -23,6 +23,20 @@ const envSchema = z.object({
   // ImgBB Image Hosting
   IMGBB_API_KEY: z.string().optional(),
 
+  // YouTube Live provider integration (kept server-side only)
+  YOUTUBE_CLIENT_ID: z.string().optional(),
+  YOUTUBE_CLIENT_SECRET: z.string().optional(),
+  YOUTUBE_REFRESH_TOKEN: z.string().optional(),
+  YOUTUBE_BROADCAST_TITLE_PREFIX: z.string().optional(),
+  YOUTUBE_LIVE_PRIVACY_STATUS: z.string().default("unlisted"),
+  YOUTUBE_LIVE_INGEST_RTMP: z.string().optional(),
+  YOUTUBE_LIVE_STREAM_NAME: z.string().optional(),
+  YOUTUBE_LIVE_STREAM_KEY: z.string().optional(),
+
+  // Live streaming gateway (WHIP ingress)
+  NEXT_PUBLIC_LIVE_STREAM_GATEWAY_URL: z.string().url().optional().or(z.literal("")),
+  LIVE_STREAMING_GATEWAY_URL: z.string().url().optional().or(z.literal("")),
+
   // S3-Compatible Object Storage
   S3_ENDPOINT: z.string().optional(),
   S3_REGION: z.string().default("us-east-1"),

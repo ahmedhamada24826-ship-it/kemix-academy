@@ -2,14 +2,15 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { homepageContent, legacyHomepageDefaults } from "@/config/homepage-content";
 import {
   ArrowLeft,
   Database,
   Terminal,
-  Cpu,
   BarChart3,
   Award,
   Clock,
@@ -17,10 +18,71 @@ import {
   BookOpen,
   FileSpreadsheet,
   Layers,
-  Users,
-  TrendingUp,
-  MessageCircle,
+  Laptop,
+  Lightbulb,
+  Code2,
+  LayoutDashboard,
+  ImageOff,
 } from "lucide-react";
+
+type EditorialPhotoProps = {
+  src: string;
+  alt: string;
+  className?: string;
+  sizes: string;
+  priority?: boolean;
+};
+
+function keepEditedCopy(value: string, legacyDefault: string, refreshedDefault: string) {
+  return value === legacyDefault ? refreshedDefault : value;
+}
+
+function matchesDefaultItems<T>(items: T[], defaults: T[]) {
+  return items.length === defaults.length &&
+    items.every((item, index) => JSON.stringify(item) === JSON.stringify(defaults[index]));
+}
+
+function isLegacyStatSet(items: SettingsData["cms"]["stats"]["items"]) {
+  return items.length === legacyHomepageDefaults.stats.length &&
+    items.every((item, index) =>
+      item.label === legacyHomepageDefaults.stats[index].label &&
+      (
+        item.value === legacyHomepageDefaults.stats[index].value ||
+        (index === 0 && item.value === "+500")
+      )
+    );
+}
+
+function EditorialPhoto({
+  src,
+  alt,
+  className = "",
+  sizes,
+  priority = false,
+}: EditorialPhotoProps) {
+  const [hasFailed, setHasFailed] = useState(false);
+
+  return (
+    <div className={`editorial-photo ${className}`}>
+      {hasFailed ? (
+        <div className="editorial-photo-fallback" role="img" aria-label={alt}>
+          <ImageOff className="h-8 w-8" aria-hidden="true" />
+          <span>الصورة غير متاحة حاليًا</span>
+        </div>
+      ) : (
+        <Image
+          src={src}
+          alt={alt}
+          fill
+          sizes={sizes}
+          priority={priority}
+          className="object-cover"
+          onError={() => setHasFailed(true)}
+        />
+      )}
+    </div>
+  );
+}
 
 interface Course {
   id: string;
@@ -87,61 +149,40 @@ interface SettingsData {
 
 const DEFAULT_CMS = {
   hero: {
-    badge: "الأكاديمية العربية الرائدة في علوم البيانات والذكاء الاصطناعي",
-    heading: "مهاراتك اليوم .. تبني مستقبلك المهني الغد",
-    subheading: "تعلم • ابنِ • تميّز",
-    description: "احترف تحليل البيانات، بايثون، استعلامات SQL، ولوحات تحكم Power BI مع مشاريع عملية وتطبيقات حقيقية تؤهلك للعمل المباشر.",
-    ctaPrimary: "ابدأ رحلة التعلم",
-    ctaSecondary: "استعرض دليل الكورسات",
+    badge: "من مصر إلى العالم",
+    heading: "مستقبلك أكبر من مجرد شهادة.",
+    subheading: "ابنِ مهاراتك. اصنع فرصتك. وكن جزءًا من المستقبل.",
+    description: "في KEMIX Academy، تتعلّم التكنولوجيا بعقلية عملية، وتحوّل المعرفة إلى مهارات ومشاريع تفتح أمامك آفاقًا جديدة في عالم البيانات والابتكار وريادة الأعمال.",
+    ctaPrimary: "ابدأ رحلتك الآن",
+    ctaSecondary: "اكتشف مسارات التعلّم",
   },
   stats: { enabled: true, items: [] },
-  featuredCourses: { enabled: true, heading: "استكشف أقوى الكورسات الموجهة لسوق العمل", description: "مسارات تدريبية مصممة خطوة بخطوة لبناء المهارات التحليلية والبرمجية." },
+  featuredCourses: { enabled: true, heading: "استكشف المسارات التعليمية المتاحة", description: "تعرّف على الدورات المتوفرة حاليًا واختر ما يناسب خطوتك التالية." },
   features: { enabled: true, heading: "المنهجية التعليمية", description: "", items: [] },
   testimonials: { enabled: true, heading: "تجارب خريجينا في سوق العمل", items: [] },
-  cta: { enabled: true, heading: "ابدأ رحلتك في احتراف علوم البيانات اليوم", description: "انضم إلى آلاف الطلاب والمحللين الذين يبنون مشاريع حقيقية مع أكاديمية كيميكس.", buttonText: "إنشاء حساب مجاني" },
+  cta: { enabled: true, heading: homepageContent.finalCta.heading, description: homepageContent.finalCta.description, buttonText: homepageContent.finalCta.button },
 };
 
 const featuresDefault = [
   {
-    title: "بيانات ومشاريع واقعية",
-    description: "تطبيق عملي على مجموعات بيانات حقيقية ضخمة بصيغ CSV و Parquet و SQL تناسب متطلبات سوق العمل الفعلية.",
+    title: "تعلّم بالتطبيق",
+    description: "حوّل المفاهيم إلى ممارسة من خلال التكليفات والأنشطة التعليمية المتاحة ضمن المسارات.",
     icon: <FileSpreadsheet className="h-6 w-6 text-blue-500" />,
   },
   {
-    title: "مشغل تعليمي متكامل",
-    description: "مشاهدة الدروس بدقة عالية، مصادر متعددة للفيديو (YouTube، Drive، تخزين سحابي)، وتنزيل ملفات الأكواد والدفاتر.",
+    title: "أدوات تقنية متنوعة",
+    description: "تعرّف على أدوات تحليل البيانات والبرمجة وقواعد البيانات ضمن تجربة تعلّم متدرجة.",
     icon: <Terminal className="h-6 w-6 text-cyan-500" />,
   },
   {
-    title: "اختبارات وتقييمات بمؤقت",
-    description: "تقييم مستوى الفهم واستيعاب المفاهيم البرمجية والإحصائية مع تصحيح فوري وشرح تفصيلي للإجابات الصحيحة.",
+    title: "تقدّم خطوة بخطوة",
+    description: "نظّم رحلة التعلّم وتابع الدروس والاختبارات والتكليفات من لوحة دراستك.",
     icon: <Layers className="h-6 w-6 text-indigo-500" />,
   },
   {
-    title: "شهادات معتمدة برمز موثق",
-    description: "شهادات إتمام رقمية معتمدة لكل مسار تدريبي تحتوي على رمز تحقق رسمي QR يمكن إضافته لحساب LinkedIn وسيرتك الذاتية.",
+    title: "مساحة للتطور",
+    description: "ابنِ أساسًا معرفيًا يمكنك تطويره مع كل مهارة جديدة وتجربة تطبيقية.",
     icon: <Award className="h-6 w-6 text-emerald-500" />,
-  },
-];
-
-const testimonialsDefault = [
-  {
-    quote: "المناهج العملية في تحليل البيانات وبايثون بأكاديمية كيميكس ساعدتني على بناء معرض أعمال قوي ساهم بشكل مباشر في توظيفي كمهندس بيانات.",
-    author: "أحمد عبد الله",
-    role: "مهندس تحليل بيانات",
-    badge: "خريج مسار Python & SQL",
-  },
-  {
-    quote: "التطبيقات العملية والشرح المباشر بدون إطالة نظرية غير مفيدة جعلتني أتقن كتابة استعلامات SQL المعقدة وبناء لوحات تحكم احترافية.",
-    author: "سارة محمود",
-    role: "أخصائية ذكاء أعمال BI",
-    badge: "حاصلة على شهادة Power BI",
-  },
-  {
-    quote: "الشهادات الموثقة ونظام المتابعة المستمر للواجبات والتكليفات يعطيك التزاماً حقيقياً يختلف عن الدورات المسجلة التقليدية.",
-    author: "محمد إبراهيم",
-    role: "محلل بيانات أعمال",
-    badge: "خريج المسار الشامل",
   },
 ];
 
@@ -178,13 +219,50 @@ export default function HomePage() {
           if (data.success && data.data?.settings) {
             const s = data.data.settings;
             if (s.cms) {
+              const storedHero = s.cms.hero || DEFAULT_CMS.hero;
+              const storedStats = s.cms.stats || DEFAULT_CMS.stats;
+              const storedCourses = s.cms.featuredCourses || DEFAULT_CMS.featuredCourses;
+              const storedFeatures = s.cms.features || DEFAULT_CMS.features;
+              const storedTestimonials = s.cms.testimonials || DEFAULT_CMS.testimonials;
+              const storedCta = s.cms.cta || DEFAULT_CMS.cta;
+
               setCms({
-                hero: s.cms.hero || DEFAULT_CMS.hero,
-                stats: s.cms.stats || DEFAULT_CMS.stats,
-                featuredCourses: s.cms.featuredCourses || DEFAULT_CMS.featuredCourses,
-                features: s.cms.features || DEFAULT_CMS.features,
-                testimonials: s.cms.testimonials || DEFAULT_CMS.testimonials,
-                cta: s.cms.cta || DEFAULT_CMS.cta,
+                hero: {
+                  ...storedHero,
+                  badge: keepEditedCopy(storedHero.badge, legacyHomepageDefaults.hero.badge, DEFAULT_CMS.hero.badge),
+                  heading: keepEditedCopy(storedHero.heading, legacyHomepageDefaults.hero.heading, DEFAULT_CMS.hero.heading),
+                  subheading: keepEditedCopy(storedHero.subheading, legacyHomepageDefaults.hero.subheading, DEFAULT_CMS.hero.subheading),
+                  description: keepEditedCopy(storedHero.description, legacyHomepageDefaults.hero.description, DEFAULT_CMS.hero.description),
+                  ctaPrimary: keepEditedCopy(storedHero.ctaPrimary, legacyHomepageDefaults.hero.ctaPrimary, DEFAULT_CMS.hero.ctaPrimary),
+                  ctaSecondary: keepEditedCopy(storedHero.ctaSecondary, legacyHomepageDefaults.hero.ctaSecondary, DEFAULT_CMS.hero.ctaSecondary),
+                },
+                stats: {
+                  ...storedStats,
+                  items: isLegacyStatSet(storedStats.items) ? [] : storedStats.items,
+                },
+                featuredCourses: {
+                  ...storedCourses,
+                  heading: keepEditedCopy(storedCourses.heading, "استكشف أقوى الكورسات الموجهة لسوق العمل", "استكشف المسارات التعليمية المتاحة"),
+                  description: keepEditedCopy(storedCourses.description, "مسارات تدريبية مصممة خطوة بخطوة لبناء المهارات التحليلية والبرمجية.", DEFAULT_CMS.featuredCourses.description),
+                },
+                features: {
+                  ...storedFeatures,
+                  items:
+                    matchesDefaultItems(storedFeatures.items, legacyHomepageDefaults.features) ||
+                    matchesDefaultItems(storedFeatures.items, legacyHomepageDefaults.pageFeatures)
+                      ? []
+                      : storedFeatures.items,
+                },
+                testimonials: {
+                  ...storedTestimonials,
+                  items: matchesDefaultItems(storedTestimonials.items, legacyHomepageDefaults.testimonials) ? [] : storedTestimonials.items,
+                },
+                cta: {
+                  ...storedCta,
+                  heading: keepEditedCopy(storedCta.heading, legacyHomepageDefaults.cta.heading, homepageContent.finalCta.heading),
+                  description: keepEditedCopy(storedCta.description, legacyHomepageDefaults.cta.description, homepageContent.finalCta.description),
+                  buttonText: keepEditedCopy(storedCta.buttonText, "إنشاء حساب مجاني", homepageContent.finalCta.button),
+                },
               });
             }
           }
@@ -202,6 +280,7 @@ export default function HomePage() {
   const features = cms?.features ?? DEFAULT_CMS.features;
   const testimonials = cms?.testimonials ?? DEFAULT_CMS.testimonials;
   const cta = cms?.cta ?? DEFAULT_CMS.cta;
+  const ctaHref = cta.buttonText === homepageContent.finalCta.button ? "/courses" : "/register";
 
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -212,70 +291,100 @@ export default function HomePage() {
     return `${mins} دقيقة`;
   };
 
-  const categories = [
-    { name: "تحليل البيانات (Data Analysis)", icon: <BarChart3 className="h-4 w-4" />, query: "Data" },
-    { name: "البرمجة بـ Python", icon: <Terminal className="h-4 w-4" />, query: "Python" },
-    { name: "قواعد البيانات و SQL", icon: <Database className="h-4 w-4" />, query: "SQL" },
-    { name: "ذكاء الأعمال و Power BI", icon: <Cpu className="h-4 w-4" />, query: "Power BI" },
-  ];
+  const impactIcons = {
+    sparkles: <Sparkles className="h-4 w-4" aria-hidden="true" />,
+    laptop: <Laptop className="h-4 w-4" aria-hidden="true" />,
+    chart: <BarChart3 className="h-4 w-4" aria-hidden="true" />,
+    lightbulb: <Lightbulb className="h-4 w-4" aria-hidden="true" />,
+  };
+
+  const skillIcons = {
+    chart: <BarChart3 className="h-5 w-5" aria-hidden="true" />,
+    code: <Code2 className="h-5 w-5" aria-hidden="true" />,
+    database: <Database className="h-5 w-5" aria-hidden="true" />,
+    dashboard: <LayoutDashboard className="h-5 w-5" aria-hidden="true" />,
+  };
 
   return (
     <div className="flex flex-col min-h-screen" dir="rtl">
       {/* Hero Section */}
-      <section className="home-hero-shell relative overflow-hidden text-white pt-20 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="home-hero-grid absolute inset-0 opacity-20" />
-        <div className="absolute -bottom-10 right-10 w-72 h-72 bg-cyan-500/5 blur-[80px] rounded-full pointer-events-none" />
-        <div className="absolute left-10 top-20 h-24 w-24 rounded-full border border-cyan-300/10" />
-        <div className="absolute right-16 bottom-12 h-28 w-28 rounded-full border border-blue-300/10" />
-
-        <div className="container relative mx-auto max-w-6xl text-center space-y-7">
-          <div className="hero-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-cyan-200 text-xs font-bold tracking-[0.08em]">
-            <Sparkles className="h-4 w-4 text-cyan-200" />
-            <span>{hero.badge}</span>
-          </div>
-
-          <h1 className="hero-title text-4xl sm:text-5xl lg:text-6xl font-black tracking-[-0.05em] leading-[1.1] max-w-4xl mx-auto text-white">
-            {hero.heading}
-          </h1>
-
-          <p className="text-xl sm:text-2xl text-white font-bold max-w-2xl mx-auto leading-relaxed tracking-[-0.02em]">
-            {hero.subheading}
-          </p>
-
-          <p className="text-sm sm:text-base text-slate-100 max-w-2xl mx-auto leading-relaxed font-medium">
-            {hero.description}
-          </p>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
-            <Link href="/courses">
-              <Button size="lg" className="bg-[#2563EB] hover:bg-blue-600 text-white font-bold text-base px-8 h-12 shadow-md flex items-center gap-2 rounded-xl">
-                <span>{hero.ctaPrimary}</span>
-                <ArrowLeft className="h-4 w-4" />
-              </Button>
-            </Link>
-            <Link href="/courses">
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-slate-600 bg-slate-900/35 hover:bg-slate-800 text-white text-base px-6 h-12 rounded-xl"
-              >
-                {hero.ctaSecondary}
-              </Button>
-            </Link>
-          </div>
-
-          <div className="pt-10 flex flex-wrap items-center justify-center gap-2.5 sm:gap-3">
-            {categories.map((cat, idx) => (
-              <Link
-                key={idx}
-                href={`/courses?category=${encodeURIComponent(cat.query)}`}
-                className="glass-chip flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-200 hover:text-white transition-all duration-200 hover:border-blue-300/60 hover:bg-slate-800/80"
-              >
-                <span className="text-cyan-400">{cat.icon}</span>
-                <span>{cat.name}</span>
+      <section className="home-hero relative overflow-hidden px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24" dir="rtl">
+        <div className="home-hero-grid absolute inset-0" aria-hidden="true" />
+        <div className="home-hero-glow home-hero-glow-one" aria-hidden="true" />
+        <div className="home-hero-glow home-hero-glow-two" aria-hidden="true" />
+        <div className="container relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16">
+          <div className="home-hero-copy space-y-6">
+            <div className="hero-badge inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold">
+              <Sparkles className="h-4 w-4 text-blue-600" />
+              <span>{hero.badge}</span>
+            </div>
+            <h1 className="hero-title max-w-2xl text-4xl font-black leading-[1.35] tracking-tight sm:text-5xl lg:text-[3.65rem]">
+              {hero.heading}
+            </h1>
+            <p className="max-w-xl text-lg font-bold leading-relaxed text-[#2563EB] sm:text-xl">
+              {hero.subheading}
+            </p>
+            <p className="max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
+              {hero.description}
+            </p>
+            <div className="flex flex-wrap items-center gap-3 pt-2">
+              <Link href="/register">
+                <Button size="lg" className="h-12 gap-2 rounded-xl bg-[#0B2D5B] px-6 font-bold text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 hover:bg-[#2563EB]">
+                  <span>{hero.ctaPrimary}</span>
+                  <ArrowLeft className="h-4 w-4" />
+                </Button>
               </Link>
-            ))}
+              <Link href="/courses">
+                <Button variant="outline" size="lg" className="h-12 rounded-xl border-slate-300 bg-white/80 px-6 font-bold text-[#0B2D5B] hover:border-blue-300 hover:bg-blue-50">
+                  {hero.ctaSecondary}
+                </Button>
+              </Link>
+            </div>
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-2 text-xs font-semibold text-slate-500">
+              <span>تعلّم عملي</span><span className="text-blue-400" aria-hidden="true">•</span>
+              <span>مهارات المستقبل</span><span className="text-blue-400" aria-hidden="true">•</span>
+              <span>طموح بلا حدود</span>
+            </p>
           </div>
+
+          <div className="home-visual relative mx-auto w-full max-w-[610px]">
+            <div className="home-visual-frame relative aspect-[4/3] overflow-hidden rounded-[1.75rem] sm:aspect-[1.2/1]">
+              <EditorialPhoto
+                src="/images/homepage/hero-team.webp"
+                alt="مختصّان يعملان على الحاسوب في مساحة عمل تقنية حديثة"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+                priority
+                className="absolute inset-0"
+              />
+              <div className="home-hero-photo-overlay absolute inset-0" aria-hidden="true" />
+              <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-white/25 bg-[#07162c]/55 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm sm:right-6 sm:top-6">
+                <span className="h-2 w-2 rounded-full bg-cyan-300" aria-hidden="true" />
+                معرفة تتحول إلى ممارسة
+              </div>
+              <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-4 sm:inset-x-6 sm:bottom-6">
+                <div className="max-w-[18rem] text-white">
+                  <p className="text-xs font-semibold text-blue-100">من مصر إلى العالم</p>
+                  <p className="mt-1 text-lg font-black leading-snug sm:text-2xl">ابدأ بخطوة. وابنِ ما بعدها.</p>
+                </div>
+                <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white backdrop-blur-sm sm:flex">
+                  <BarChart3 className="h-5 w-5" aria-hidden="true" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-impact-strip border-b border-slate-200 bg-white px-4 py-5 sm:px-6" aria-label="محاور التعلّم">
+        <div className="container mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:justify-between">
+          {homepageContent.impact.map((item) => (
+            <div key={item.label} className="flex items-center gap-2.5 text-sm font-semibold text-slate-600">
+              <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
+                {impactIcons[item.icon as keyof typeof impactIcons]}
+              </span>
+              {item.label}
+            </div>
+          ))}
         </div>
       </section>
 
@@ -292,6 +401,41 @@ export default function HomePage() {
           </div>
         </section>
       )}
+
+      <section className="home-skills-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8" id="skills">
+        <div className="container mx-auto max-w-6xl">
+          <div className="mb-9 flex flex-col justify-between gap-5 sm:mb-11 sm:flex-row sm:items-end">
+            <div className="max-w-2xl space-y-3">
+              <p className="section-eyebrow">{homepageContent.skills.eyebrow}</p>
+              <h2 className="text-3xl font-black tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.skills.heading}</h2>
+              <p className="text-sm leading-7 text-slate-600 sm:text-base">{homepageContent.skills.description}</p>
+            </div>
+            <Link href="/courses" className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900">
+              تصفّح الكورسات <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {homepageContent.skills.items.map((skill, index) => (
+              <Link
+                key={skill.query}
+                href={`/courses?category=${encodeURIComponent(skill.query)}`}
+                className={`home-skill-link home-skill-link-${index + 1} group flex min-h-[190px] flex-col justify-between border border-slate-200 bg-white p-5 transition duration-200 hover:-translate-y-1 hover:border-blue-300 hover:shadow-xl hover:shadow-blue-950/5 sm:p-6`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-700 transition group-hover:bg-[#0B2D5B] group-hover:text-white">
+                    {skillIcons[skill.icon as keyof typeof skillIcons]}
+                  </span>
+                  <span className="font-mono text-xs font-medium tracking-wide text-slate-400">{skill.englishTitle}</span>
+                </div>
+                <div className="mt-7">
+                  <h3 className="text-lg font-bold text-slate-900">{skill.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-slate-500">{skill.description}</p>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
 
       {/* Featured Courses Section */}
       <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50">
@@ -336,16 +480,20 @@ export default function HomePage() {
                   key={course.id}
                   className="home-course-card flex flex-col overflow-hidden border-slate-200/80 hover:border-blue-300 hover:shadow-[0_22px_45px_rgba(37,99,235,0.08)] transition-all duration-200 group bg-white rounded-2xl"
                 >
-                  <div className="relative h-48 w-full bg-gradient-to-tr from-[#0B2D5B] to-[#2563EB] overflow-hidden">
-                    {course.coverImageUrl ? (
-                      <div
-                        style={{ backgroundImage: `url(${course.coverImageUrl})` }}
-                        className="h-full w-full bg-contain bg-center bg-no-repeat"
+                  <div className="relative aspect-[16/9] w-full overflow-hidden bg-gradient-to-tr from-[#0B2D5B] to-[#2563EB]">
+                    <div className="absolute inset-0 flex items-center justify-center text-white/50" aria-hidden="true">
+                      <Database className="h-10 w-10" />
+                    </div>
+                    {course.coverImageUrl && (
+                      <Image
+                        src={course.coverImageUrl}
+                        alt={`غلاف دورة ${course.title}`}
+                        fill
+                        unoptimized
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                        onError={(event) => event.currentTarget.classList.add("hidden")}
                       />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center p-6 text-white text-center">
-                        <Database className="h-12 w-12 opacity-40 mb-2" />
-                      </div>
                     )}
                     <div className="absolute top-3 right-3">
                       <Badge variant="navy" className="bg-slate-900/80 backdrop-blur-sm text-xs font-semibold">
@@ -365,8 +513,11 @@ export default function HomePage() {
                       <Link href={`/courses/${course.id}`}>{course.title}</Link>
                     </CardTitle>
                     <CardDescription className="text-xs text-slate-500 line-clamp-2 mt-1">
-                      {course.shortDescription || "تعلم الأدوات التحليلية خطوة بخطوة مع تدريبات عملية وتكليفات تطبيقية."}
+                      {course.shortDescription || "اطّلع على تفاصيل محتوى الدورة وما تتضمنه من موضوعات تعليمية."}
                     </CardDescription>
+                    {course.instructor?.fullName && (
+                      <p className="mt-3 text-xs font-semibold text-slate-500">مع {course.instructor.fullName}</p>
+                    )}
                   </CardHeader>
 
                   <CardContent className="pt-0 space-y-4">
@@ -375,6 +526,12 @@ export default function HomePage() {
                         <Clock className="h-3.5 w-3.5 text-slate-400" />
                         <span>{formatDuration(course.durationSeconds || 7200)}</span>
                       </div>
+                      {course._count?.sections !== undefined && (
+                        <div className="flex items-center gap-1">
+                          <BookOpen className="h-3.5 w-3.5 text-slate-400" />
+                          <span>{course._count.sections} وحدات</span>
+                        </div>
+                      )}
                       <div className="font-bold text-slate-800">
                         {course.isFree || !course.price ? (
                           <span className="text-emerald-600">مجاني بالكامل</span>
@@ -393,63 +550,112 @@ export default function HomePage() {
                 </Card>
               ))
             ) : (
-              [
-                {
-                  id: "1",
-                  title: "تحليل البيانات المتقدم باستخدام Python",
-                  desc: "إتقان مكتبات Pandas و NumPy والنماذج الإحصائية مع بناء خطوط معالجة البيانات ETL على بيانات حقيقية.",
-                  level: "مبتدئ",
-                  duration: "4 ساعات",
-                },
-                {
-                  id: "2",
-                  title: "احتراف قواعد البيانات و استعلامات SQL",
-                  desc: "كتابة استعلامات سريعة، دوال النوافذ Window Functions، وتهيئات الفهارس Indexing على PostgreSQL.",
-                  level: "متوسط",
-                  duration: "5 ساعات",
-                },
-                {
-                  id: "3",
-                  title: "لوحات التحكم التفاعلية بـ Power BI",
-                  desc: "بناء لوحات معلومات تنفيذية متقدمة، صيغ DAX، والنمذجة البُعدية لبيانات الشركات.",
-                  level: "جميع المستويات",
-                  duration: "3 ساعات",
-                },
-              ].map((item, idx) => (
-                <Card
-                  key={idx}
-                  className="flex flex-col overflow-hidden border-slate-200/80 hover:border-blue-300 hover:shadow-lg transition-all group bg-white"
-                >
-                  <div className="relative h-44 w-full bg-gradient-to-br from-[#07162C] to-[#2563EB] flex items-center justify-center text-white">
-                    <Database className="h-10 w-10 opacity-60" />
-                    <div className="absolute top-3 right-3">
-                      <Badge variant="navy" className="bg-slate-900/80 backdrop-blur-sm text-xs">
-                        {item.level}
-                      </Badge>
-                    </div>
-                  </div>
-                  <CardHeader className="flex-1 pb-2">
-                    <CardTitle className="text-lg font-bold text-slate-900 group-hover:text-[#2563EB] transition-colors">
-                      <Link href="/courses">{item.title}</Link>
-                    </CardTitle>
-                    <CardDescription className="text-xs text-slate-500">
-                      {item.desc}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="pt-0 space-y-4">
-                    <div className="flex items-center justify-between text-xs text-slate-500 border-t border-slate-100 pt-3 font-mono">
-                      <span>{item.duration}</span>
-                      <span className="text-emerald-600 font-bold font-sans">اشتراك مباشر</span>
-                    </div>
-                    <Link href="/courses" className="block">
-                      <Button className="w-full bg-[#0B2D5B] hover:bg-[#2563EB] text-white text-xs font-bold h-9">
-                        استعراض المنهج
-                      </Button>
-                    </Link>
-                  </CardContent>
-                </Card>
-              ))
+              <div className="col-span-full rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-12 text-center">
+                <Database className="mx-auto h-9 w-9 text-blue-500" />
+                <p className="mt-4 text-lg font-bold text-slate-800">المسارات تتشكل باستمرار</p>
+                <p className="mx-auto mt-2 max-w-md text-sm leading-7 text-slate-500">تصفّح دليل التعلم للاطلاع على الكورسات المتاحة حاليًا.</p>
+                <Link href="/courses" className="mt-5 inline-flex items-center gap-2 font-bold text-blue-700 hover:text-blue-800">
+                  استكشف جميع الكورسات <ArrowLeft className="h-4 w-4" />
+                </Link>
+              </div>
             )}
+          </div>
+        </div>
+      </section>
+
+      <section className="home-data-story px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="container mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.9fr] lg:gap-16">
+          <div className="home-data-photo-wrap relative">
+            <EditorialPhoto
+              src="/images/homepage/data-analytics.webp"
+              alt={homepageContent.dataStory.imageAlt}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="aspect-[4/3] overflow-hidden rounded-2xl"
+            />
+            <div className="absolute bottom-4 right-4 rounded-lg border border-white/30 bg-slate-950/65 px-3 py-2 text-[10px] font-medium text-white backdrop-blur-sm">
+              {homepageContent.dataStory.note}
+            </div>
+            <span className="home-photo-index absolute -left-3 -top-3 hidden font-mono text-sm font-semibold text-blue-700 sm:block">01 / INSIGHT</span>
+          </div>
+          <div className="space-y-5">
+            <p className="section-eyebrow">{homepageContent.dataStory.eyebrow}</p>
+            <h2 className="max-w-xl text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.dataStory.heading}</h2>
+            <p className="max-w-xl text-base leading-8 text-slate-600">{homepageContent.dataStory.description}</p>
+            <div className="home-analysis-flow" aria-label="مراحل مبسطة لتحليل البيانات">
+              <div><Database className="h-4 w-4" aria-hidden="true" /><span>بيانات</span></div>
+              <span className="home-analysis-connector" aria-hidden="true" />
+              <div><BarChart3 className="h-4 w-4" aria-hidden="true" /><span>تحليل</span></div>
+              <span className="home-analysis-connector" aria-hidden="true" />
+              <div><Lightbulb className="h-4 w-4" aria-hidden="true" /><span>رؤية</span></div>
+            </div>
+            <div className="home-insight-chart" role="img" aria-label="رسم تعليمي توضيحي لكيفية عرض اتجاهات البيانات، لا يمثل بيانات فعلية">
+              <div className="flex items-center justify-between gap-3">
+                <p className="text-xs font-bold text-slate-700">قراءة الاتجاهات</p>
+                <span className="text-[10px] font-medium text-slate-400">رسم تعليمي توضيحي</span>
+              </div>
+              <div className="home-insight-plot" aria-hidden="true">
+                <div className="home-insight-gridlines"><i /><i /><i /></div>
+                <div className="home-insight-bars">
+                  {[32, 48, 41, 65, 56, 78, 70, 92].map((height, index) => (
+                    <span key={index} style={{ height: `${height}%` }} />
+                  ))}
+                </div>
+                <svg className="home-insight-line" viewBox="0 0 320 100" preserveAspectRatio="none">
+                  <path d="M0 76 C28 72 32 55 58 62 S94 68 118 49 S155 58 180 38 S220 45 245 27 S282 34 320 12" />
+                </svg>
+              </div>
+            </div>
+            <Link href="/courses?category=Data" className="inline-flex items-center gap-2 pt-2 text-sm font-bold text-blue-700 hover:text-blue-900">
+              استكشف تحليل البيانات <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-practice-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="container mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+          <div className="order-2 space-y-5 lg:order-1">
+            <p className="section-eyebrow">{homepageContent.build.eyebrow}</p>
+            <h2 className="max-w-xl text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.build.heading}</h2>
+            <p className="max-w-xl text-base leading-8 text-slate-600">{homepageContent.build.description}</p>
+            <ol className="home-build-steps">
+              {homepageContent.build.steps.map((step, index) => (
+                <li key={step}><span>0{index + 1}</span>{step}</li>
+              ))}
+            </ol>
+            <Link href="/courses" className="inline-flex items-center gap-2 pt-2 text-sm font-bold text-blue-700 hover:text-blue-900">
+              اختر ما تريد تعلّمه <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </Link>
+          </div>
+          <div className="home-practice-photo order-1 lg:order-2">
+            <EditorialPhoto
+              src="/images/homepage/learning-team.webp"
+              alt={homepageContent.build.imageAlt}
+              sizes="(max-width: 1024px) 100vw, 55vw"
+              className="aspect-[4/3] overflow-hidden rounded-2xl"
+            />
+            <div className="home-photo-caption"><BookOpen className="h-4 w-4" aria-hidden="true" /><span>من التعلّم إلى التطبيق</span></div>
+          </div>
+        </div>
+      </section>
+
+      <section className="home-innovation-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
+        <div className="container mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-16">
+          <div className="home-innovation-photo">
+            <EditorialPhoto
+              src="/images/homepage/strategy-team.webp"
+              alt={homepageContent.innovation.imageAlt}
+              sizes="(max-width: 1024px) 100vw, 50vw"
+              className="aspect-[16/10] overflow-hidden rounded-2xl"
+            />
+          </div>
+          <div className="home-innovation-copy space-y-5">
+            <p className="section-eyebrow">{homepageContent.innovation.eyebrow}</p>
+            <h2 className="max-w-lg text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.innovation.heading}</h2>
+            <p className="max-w-xl text-base leading-8 text-slate-600">{homepageContent.innovation.description}</p>
+            <Link href="/about" className="inline-flex items-center gap-2 pt-2 text-sm font-bold text-blue-700 hover:text-blue-900">
+              تعرّف على رؤيتنا <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </Link>
           </div>
         </div>
       </section>
@@ -459,10 +665,10 @@ export default function HomePage() {
         <div className="container mx-auto max-w-6xl space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <Badge variant="secondary" className="text-blue-700 bg-blue-50 border-blue-200 font-bold">
-              {features.heading || "المنهجية التعليمية"}
+              {features.heading || "منهجية التعلّم"}
             </Badge>
             <h2 className="text-3xl font-black tracking-tight text-slate-900">
-              {features.heading}
+              تعلّم بهدف. تقدّم بثقة.
             </h2>
             {features.description && (
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
@@ -513,59 +719,28 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Testimonials */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-[#0F172A] text-white">
-        <div className="container mx-auto max-w-6xl space-y-12">
-          <div className="text-center space-y-3 max-w-2xl mx-auto">
-            <Badge variant="cyan" className="bg-cyan-950/60 border-cyan-800 text-cyan-300 font-bold">
-              قصص نجاح الطلاب
-            </Badge>
-            <h2 className="text-3xl font-black tracking-tight text-white">
-              {testimonials.heading}
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {testimonials.items.length > 0 ? (
-              testimonials.items.map((item, idx) => (
-                <div
-                  key={idx}
-                  className="home-testimonial-card flex flex-col justify-between p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4 shadow-[0_20px_35px_rgba(15,23,42,0.12)]"
-                >
-                  <p className="text-sm text-slate-300 leading-relaxed italic">
-                    &ldquo;{item.quote}&rdquo;
-                  </p>
-                  <div className="border-t border-slate-700/60 pt-4 space-y-1">
-                    <p className="font-bold text-white text-sm">{item.author}</p>
-                    <p className="text-xs text-slate-400">{item.role}</p>
-                    <span className="inline-block text-[10px] text-cyan-400 font-bold mt-1">
-                      {item.badge}
-                    </span>
+      {testimonials.enabled && testimonials.items.length > 0 && (
+        <section className="py-16 px-4 sm:px-6 lg:px-8">
+          <div className="container mx-auto max-w-6xl space-y-10">
+            <div className="max-w-2xl space-y-3">
+              <Badge variant="cyan" className="font-bold">من مجتمع كيميكس</Badge>
+              <h2 className="text-3xl font-black tracking-tight text-slate-900">{testimonials.heading}</h2>
+            </div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-3">
+              {testimonials.items.map((item, idx) => (
+                <div key={idx} className="home-testimonial-card flex flex-col justify-between space-y-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+                  <p className="text-sm leading-relaxed text-slate-600">&ldquo;{item.quote}&rdquo;</p>
+                  <div className="space-y-1 border-t border-slate-100 pt-4">
+                    <p className="text-sm font-bold text-[#0B2D5B]">{item.author}</p>
+                    <p className="text-xs text-slate-500">{item.role}</p>
+                    <span className="mt-1 inline-block text-[10px] font-bold text-blue-600">{item.badge}</span>
                   </div>
                 </div>
-              ))
-            ) : (
-              testimonialsDefault.map((testi, idx) => (
-                <div
-                  key={idx}
-                  className="home-testimonial-card flex flex-col justify-between p-6 rounded-2xl bg-slate-800/80 border border-slate-700/80 space-y-4 shadow-[0_20px_35px_rgba(15,23,42,0.12)]"
-                >
-                  <p className="text-sm text-slate-300 leading-relaxed italic">
-                    &ldquo;{testi.quote}&rdquo;
-                  </p>
-                  <div className="border-t border-slate-700/60 pt-4 space-y-1">
-                    <p className="font-bold text-white text-sm">{testi.author}</p>
-                    <p className="text-xs text-slate-400">{testi.role}</p>
-                    <span className="inline-block text-[10px] text-cyan-400 font-bold mt-1">
-                      {testi.badge}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
+              ))}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       {/* CTA Bottom Banner */}
       {cta.enabled && (
@@ -578,18 +753,18 @@ export default function HomePage() {
               {cta.description}
             </p>
             <div className="pt-2 flex flex-wrap justify-center gap-4">
-              <Link href="/register">
+              <Link href={ctaHref}>
                 <Button size="lg" className="bg-white text-[#0B2D5B] hover:bg-slate-100 font-black px-8 h-12 shadow-lg">
                   {cta.buttonText || "إنشاء حساب مجاني"}
                 </Button>
               </Link>
-              <Link href="/courses">
+              <Link href={ctaHref === "/courses" ? "/register" : "/courses"}>
                 <Button
                   variant="outline"
                   size="lg"
                   className="border-white/40 text-white hover:bg-white/10 px-6 h-12 font-bold"
                 >
-                  استعرض جميع الكورسات
+                  {ctaHref === "/courses" ? "أنشئ حسابك الآن" : "استعرض جميع الكورسات"}
                 </Button>
               </Link>
             </div>

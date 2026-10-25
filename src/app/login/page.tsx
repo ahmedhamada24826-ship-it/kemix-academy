@@ -51,7 +51,7 @@ function LoginForm() {
   };
 
   return (
-    <Card className="w-full max-w-md bg-white border-slate-200 shadow-xl" dir="rtl">
+    <Card className="auth-card w-full max-w-md bg-white" dir="rtl">
       <CardHeader className="text-center space-y-2 pb-4">
         <div className="flex justify-center mb-2">
           <Logo variant="app-icon" size="md" href="/" />
@@ -140,7 +140,7 @@ function LoginForm() {
 
 export default function LoginPage() {
   return (
-    <div className="min-h-[calc(100vh-120px)] flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6" dir="rtl">
+    <div className="auth-page min-h-[calc(100vh-120px)] flex items-center justify-center py-12 px-4 sm:px-6" dir="rtl">
       <Suspense fallback={<div className="h-96 w-full max-w-md bg-white rounded-xl animate-pulse" />}>
         <LoginForm />
       </Suspense>

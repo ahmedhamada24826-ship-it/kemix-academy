@@ -38,7 +38,7 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-md transition-all">
+    <header className="sticky top-0 z-50 w-full border-b border-slate-200/70 bg-white/90 shadow-[0_4px_24px_rgba(11,45,91,0.04)] backdrop-blur-xl transition-all">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand Logo */}
         <Logo href="/" size="md" showTagline={false} />
@@ -167,7 +167,7 @@ export function Header() {
                 تسجيل الدخول
               </Link>
               <Link href="/register">
-                <Button size="md" className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white shadow-sm font-bold">
+                <Button size="md" className="rounded-xl bg-[#0B2D5B] font-bold text-white shadow-sm shadow-blue-950/10 hover:bg-[#2563EB]">
                   إنشاء حساب جديد
                 </Button>
               </Link>

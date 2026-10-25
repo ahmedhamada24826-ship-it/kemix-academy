@@ -154,7 +154,7 @@ export function Logo({
       >
         <img
           src="/kemix-academy-logo.png"
-          alt="KEMIX Academy — Learn • Build • Grow"
+          alt="KEMIX Academy — Learn → Build → Grow"
           className="brand-logo-image"
         />
       </span>

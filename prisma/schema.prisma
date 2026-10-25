@@ -140,6 +140,16 @@ enum PaymentRequestStatus {
   REJECTED
 }
 
+/// Live lecture lifecycle states
+enum LiveLectureStatus {
+  SCHEDULED
+  READY
+  LIVE
+  PROCESSING
+  RECORDED
+  FAILED
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Models: Identity & Auth
 // ─────────────────────────────────────────────────────────────────────────────
@@ -170,6 +180,7 @@ model User {
   paymentRequests   PaymentRequest[] @relation("UserPaymentRequests")
   reviewedPayments  PaymentRequest[] @relation("PaymentReviewer")
   auditLogs         AuditLog[]       @relation("ActorAuditLogs")
+  liveLectures      LiveLecture[]     @relation("InstructorLiveLectures")
 
   @@index([role])
   @@index([status])
@@ -233,6 +244,7 @@ model Course {
   certificates     Certificate[]
   files            FileAsset[]
   paymentRequests  PaymentRequest[]
+  liveLectures     LiveLecture[]
 
   @@index([instructorId])
   @@index([status])
@@ -241,6 +253,37 @@ model Course {
 }
 
 /// Ordered logical module/section within a course (displayed as "Week / الأسبوع")
+model LiveLecture {
+  id               String           @id @default(uuid())
+  title            String
+  courseId         String
+  instructorId     String
+  scheduledAt      DateTime
+  durationMinutes   Int              @default(60)
+  description      String?          @db.Text
+  status           LiveLectureStatus @default(SCHEDULED)
+  youtubeBroadcastId String?
+  youtubeVideoId   String?
+  youtubeUrl       String?
+  youtubeEmbedUrl  String?
+  thumbnailUrl     String?
+  recordingStatus  String?          @default("NOT_REQUESTED")
+  recordedAt       DateTime?
+  startedAt        DateTime?
+  endedAt          DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  instructor       User             @relation("InstructorLiveLectures", fields: [instructorId], references: [id], onDelete: Restrict)
+
+  @@index([courseId])
+  @@index([instructorId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("live_lectures")
+}
+
 model CourseSection {
   id          String   @id @default(uuid())
   courseId    String
