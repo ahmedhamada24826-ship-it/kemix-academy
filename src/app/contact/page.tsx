@@ -14,11 +14,31 @@ import {
 } from "lucide-react";
 
 export default function ContactPage() {
+  const [contactText, setContactText] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
+
+  React.useEffect(() => {
+    async function loadContactText() {
+      try {
+        const response = await fetch("/api/settings", { cache: "no-store" });
+        if (!response.ok) throw new Error(`Settings request failed (${response.status})`);
+        const result = await response.json();
+        if (result.success) {
+          setContactText(result.data?.settings?.contactText ?? null);
+        } else {
+          throw new Error(result.error?.message || "Failed to load contact page settings");
+        }
+      } catch (error) {
+        console.error("Failed to load contact page text", error);
+      }
+    }
+
+    loadContactText();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,7 +57,7 @@ export default function ContactPage() {
             تواصل مع فريق أكاديمية كيميكس
           </h1>
           <p className="text-sm sm:text-base text-slate-600 leading-relaxed">
-            نحن هنا للإجابة على استفساراتك حول الكورسات، طرق الدفع، والمسارات التدريبية.
+            {contactText || "نحن هنا للإجابة على استفساراتك حول الكورسات، طرق الدفع، والمسارات التدريبية."}
           </p>
         </div>
 

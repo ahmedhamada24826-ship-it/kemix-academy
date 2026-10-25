@@ -12,6 +12,8 @@ import {
   type HomepageCms,
 } from "@/components/admin/homepage-cms-editor";
 import { ImageUploadField } from "@/components/upload/image-upload-field";
+import { useTheme } from "@/components/providers/theme-provider";
+import { useLanguage } from "@/components/providers/language-provider";
 import {
   Settings,
   Save,
@@ -41,6 +43,8 @@ interface PlatformSettings {
 }
 
 export default function AdminSettingsPage() {
+  const { theme, setTheme } = useTheme();
+  const { locale, setLocale } = useLanguage();
   const [settings, setSettings] = useState<PlatformSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -205,6 +209,48 @@ export default function AdminSettingsPage() {
                     />
                   </div>
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">المظهر الافتراضي</label>
+                    <select
+                      value={theme}
+                      onChange={(e) => {
+                        const nextTheme = e.target.value as "light" | "dark";
+                        setTheme(nextTheme);
+                        setField("cms", {
+                          ...settings.cms,
+                          preferences: { ...settings.cms.preferences, theme: nextTheme },
+                        });
+                      }}
+                      className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                    >
+                      <option value="light">فاتح</option>
+                      <option value="dark">غامق</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">اللغة الافتراضية</label>
+                    <select
+                      value={locale}
+                      onChange={(e) => {
+                        const nextLocale = e.target.value as "ar" | "en";
+                        setLocale(nextLocale);
+                        setField("cms", {
+                          ...settings.cms,
+                          preferences: { ...settings.cms.preferences, locale: nextLocale },
+                        });
+                      }}
+                      className="h-10 w-full rounded-md border border-slate-300 bg-white px-3 text-sm text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                    >
+                      <option value="ar">العربية</option>
+                      <option value="en">English</option>
+                    </select>
+                  </div>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  يتم حفظ الاختيارات كإعداد افتراضي للزوار الجدد. يحتفظ كل زائر باختياره المحلي عند تغييره من رأس الموقع.
+                </p>
 
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700">وصف المنصة والرسالة التعليمية</label>

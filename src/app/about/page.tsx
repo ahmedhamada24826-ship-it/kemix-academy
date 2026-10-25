@@ -8,12 +8,13 @@ import {
   Cpu,
   ShieldCheck,
   Award,
-  Sparkles,
-  ArrowLeft,
-  CheckCircle2,
 } from "lucide-react";
+import { platformSettingsService } from "@/server/application/settings/settings.service";
+import { headers } from "next/headers";
 
-export default function AboutPage() {
+export default async function AboutPage() {
+  await headers();
+  const settings = await platformSettingsService.getSettings();
   const pillars = [
     {
       title: "بيانات واقعية وتطبيقات حية",
@@ -49,7 +50,7 @@ export default function AboutPage() {
             نبني جيلاً من محترفي علوم البيانات والذكاء الاصطناعي
           </h1>
           <p className="text-base sm:text-lg text-slate-600 leading-relaxed">
-            تأسست أكاديمية كيميكس KEMIX Academy بهدف تمكين الكفاءات العربية وتزويدهم بالمهارات التطبيقية الحقيقية المطلوبة في الشركات العالمية.
+            {settings.aboutText || "تأسست أكاديمية كيميكس KEMIX Academy بهدف تمكين الكفاءات العربية وتزويدهم بالمهارات التطبيقية الحقيقية المطلوبة في الشركات العالمية."}
           </p>
         </section>
 

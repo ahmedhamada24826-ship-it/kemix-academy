@@ -3,15 +3,23 @@ import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { AuthProvider } from "@/components/providers/auth-provider";
+import { ThemeProvider } from "@/components/providers/theme-provider";
+import { LanguageProvider } from "@/components/providers/language-provider";
 import { siteConfig } from "@/config/site";
+import { platformSettingsService } from "@/server/application/settings/settings.service";
+import { headers } from "next/headers";
 
-export const metadata: Metadata = {
-  title: `${siteConfig.name} — ${siteConfig.tagline}`,
-  description: siteConfig.description,
-  icons: {
-    icon: "/favicon.ico",
-  },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  await headers();
+  const settings = await platformSettingsService.getSettings();
+  return {
+    title: `${settings.siteName || siteConfig.name} — ${siteConfig.tagline}`,
+    description: settings.siteDescription || siteConfig.description,
+    icons: {
+      icon: settings.faviconUrl || "/favicon.ico",
+    },
+  };
+}
 
 export default function RootLayout({
   children,
@@ -20,14 +28,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="h-full">
-      <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased font-sans">
-        <AuthProvider>
-          <Header />
-          <main className="flex-1 flex flex-col">{children}</main>
-          <Footer />
-        </AuthProvider>
+      <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased font-sans transition-colors duration-200">
+        <LanguageProvider>
+          <ThemeProvider>
+            <AuthProvider>
+              <Header />
+              <main className="flex-1 flex flex-col">{children}</main>
+              <Footer />
+            </AuthProvider>
+          </ThemeProvider>
+        </LanguageProvider>
       </body>
     </html>
   );
 }
-

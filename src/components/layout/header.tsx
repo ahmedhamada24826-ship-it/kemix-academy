@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/brand/logo";
@@ -15,21 +15,47 @@ import {
   GraduationCap,
   Award,
   BookOpen,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/components/providers/theme-provider";
+import { useLanguage } from "@/components/providers/language-provider";
 
 export function Header() {
   const { user, isAuthenticated, isLoading, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const { locale, setLocale, t } = useLanguage();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadBranding() {
+      try {
+        const response = await fetch("/api/settings", { cache: "no-store" });
+        if (!response.ok) throw new Error(`Settings request failed (${response.status})`);
+        const result = await response.json();
+        if (result.success) {
+          setLogoUrl(result.data?.settings?.logoUrl ?? null);
+        } else {
+          throw new Error(result.error?.message || "Failed to load platform branding");
+        }
+      } catch (error) {
+        console.error("Failed to load header logo", error);
+      }
+    }
+
+    loadBranding();
+  }, []);
 
   const navItems = [
-    { label: "الرئيسية", href: "/" },
-    { label: "الكورسات", href: "/courses" },
-    { label: "عن الأكاديمية", href: "/about" },
-    { label: "تواصل معنا", href: "/contact" },
-    { label: "التحقق من الشهادات", href: "/verify" },
+    { label: t("home"), href: "/" },
+    { label: t("courses"), href: "/courses" },
+    { label: t("about"), href: "/about" },
+    { label: t("contact"), href: "/contact" },
+    { label: t("verify"), href: "/verify" },
   ];
 
   const isCurrent = (href: string) => {
@@ -41,7 +67,7 @@ export function Header() {
     <header className="sticky top-0 z-50 w-full border-b border-slate-200/70 bg-white/90 shadow-[0_4px_24px_rgba(11,45,91,0.04)] backdrop-blur-xl transition-all">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6">
         {/* Brand Logo */}
-        <Logo href="/" size="md" showTagline={false} />
+        <Logo href="/" size="md" showTagline={false} imageUrl={logoUrl} />
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-7 text-sm font-medium">
@@ -66,6 +92,24 @@ export function Header() {
 
         {/* Auth CTA & User Menu */}
         <div className="hidden md:flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+            className="rounded-lg border border-slate-200 bg-white/80 px-2.5 py-1.5 text-[11px] font-black text-slate-700 transition-colors hover:border-blue-200 hover:bg-blue-50 hover:text-[#2563EB]"
+            aria-label={t("languageLabel")}
+            title={t("languageLabel")}
+          >
+            {locale === "ar" ? "EN" : "AR"}
+          </button>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            aria-label={theme === "light" ? t("themeDark") : t("themeLight")}
+            title={theme === "light" ? t("themeDark") : t("themeLight")}
+          >
+            {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </button>
           {isLoading ? (
             <div className="h-9 w-24 bg-slate-100 animate-pulse rounded-md" />
           ) : isAuthenticated && user ? (
@@ -84,10 +128,10 @@ export function Header() {
                   </p>
                   <p className="text-[10px] text-[#2563EB] font-medium">
                     {user.role === "ADMIN"
-                      ? "مدير المنصة"
+                      ? locale === "ar" ? "مدير المنصة" : "Platform admin"
                       : user.role === "INSTRUCTOR"
-                      ? "معلم / مدرب"
-                      : "طالب"}
+                      ? locale === "ar" ? "معلم / مدرب" : "Instructor"
+                      : locale === "ar" ? "طالب" : "Student"}
                   </p>
                 </div>
               </button>
@@ -108,7 +152,7 @@ export function Header() {
                       className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                     >
                       <ShieldCheck className="h-4 w-4 text-[#0B2D5B]" />
-                      <span>لوحة تحكم الإدارة</span>
+                      <span>{t("admin")}</span>
                     </Link>
                   )}
 
@@ -118,7 +162,7 @@ export function Header() {
                       className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                     >
                       <GraduationCap className="h-4 w-4 text-[#2563EB]" />
-                      <span>لوحة تحكم المعلم</span>
+                      <span>{t("instructor")}</span>
                     </Link>
                   )}
 
@@ -127,7 +171,7 @@ export function Header() {
                     className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-700 hover:bg-blue-50 hover:text-blue-700 transition-colors"
                   >
                     <LayoutDashboard className="h-4 w-4 text-slate-500" />
-                    <span>لوحة دراستي (الطلاب)</span>
+                    <span>{t("dashboard")}</span>
                   </Link>
 
                   <Link
@@ -135,7 +179,7 @@ export function Header() {
                     className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
                   >
                     <BookOpen className="h-4 w-4 text-slate-500" />
-                    <span>تصفح الكورسات</span>
+                    <span>{t("courses")}</span>
                   </Link>
 
                   <Link
@@ -143,7 +187,7 @@ export function Header() {
                     className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-slate-700 hover:bg-slate-50 transition-colors"
                   >
                     <Award className="h-4 w-4 text-slate-500" />
-                    <span>التحقق من الشهادات</span>
+                    <span>{t("verify")}</span>
                   </Link>
 
                   <div className="border-t border-slate-100 mt-1 pt-1">
@@ -152,7 +196,7 @@ export function Header() {
                       className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 transition-colors text-right"
                     >
                       <LogOut className="h-4 w-4" />
-                      <span>تسجيل الخروج</span>
+                  <span>{t("logout")}</span>
                     </button>
                   </div>
                 </div>
@@ -164,11 +208,11 @@ export function Header() {
                 href="/login"
                 className="text-sm font-medium text-slate-700 hover:text-slate-900 px-3.5 py-2 rounded-lg hover:bg-slate-100 transition-colors"
               >
-                تسجيل الدخول
+                {t("login")}
               </Link>
               <Link href="/register">
                 <Button size="md" className="rounded-xl bg-[#0B2D5B] font-bold text-white shadow-sm shadow-blue-950/10 hover:bg-[#2563EB]">
-                  إنشاء حساب جديد
+                  {t("signup")}
                 </Button>
               </Link>
             </>
@@ -177,6 +221,24 @@ export function Header() {
 
         {/* Mobile menu trigger */}
         <div className="flex md:hidden items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLocale(locale === "ar" ? "en" : "ar")}
+            className="rounded-lg border border-slate-200 bg-white/80 px-2 py-1.5 text-[11px] font-black text-slate-700 transition-colors hover:bg-blue-50 hover:text-[#2563EB]"
+            aria-label={t("languageLabel")}
+            title={t("languageLabel")}
+          >
+            {locale === "ar" ? "EN" : "AR"}
+          </button>
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="rounded-lg p-2 text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-900"
+            aria-label={theme === "light" ? t("themeDark") : t("themeLight")}
+            title={theme === "light" ? t("themeDark") : t("themeLight")}
+          >
+            {theme === "light" ? <Moon className="h-4 w-4" /> : <Sun className="h-4 w-4" />}
+          </button>
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 focus:outline-none"

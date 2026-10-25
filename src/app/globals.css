@@ -319,6 +319,78 @@ html {
   object-fit: contain;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #0b1627;
+  color: #e5edf7;
+}
+
+html.dark .text-slate-900,
+html.dark .text-slate-800 {
+  color: #f1f5f9 !important;
+}
+
+html.dark .text-slate-700,
+html.dark .text-slate-600 {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500,
+html.dark .text-slate-400 {
+  color: #a7b5c8 !important;
+}
+
+html.dark .bg-white,
+html.dark .bg-white\/80,
+html.dark .bg-white\/90,
+html.dark .bg-white\/95 {
+  background-color: #111f32 !important;
+}
+
+html.dark .bg-slate-50,
+html.dark .bg-slate-100 {
+  background-color: #162438 !important;
+}
+
+html.dark .border-slate-100,
+html.dark .border-slate-200,
+html.dark .border-slate-300 {
+  border-color: #2b3b52 !important;
+}
+
+html.dark input,
+html.dark textarea,
+html.dark select {
+  color: #e5edf7;
+  background-color: #111f32;
+  border-color: #3a4b63;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #94a3b8;
+}
+
+html.dark header.sticky {
+  background-color: rgb(11 22 39 / 94%);
+  border-color: #26364b;
+}
+
+html.dark .brand-logo-image-frame:not(.brand-logo-image-frame-dark) {
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.65rem;
+  background-color: #fff;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 14%);
+}
+
+html.dark .brand-logo-image-frame:not(.brand-logo-image-frame-dark) .brand-logo-image {
+  top: -31%;
+  height: 162%;
+}
+
 .certificate-shell {
   width: 100%;
   color: #0b2d5b;
@@ -1603,4 +1675,142 @@ html {
   .home-analysis-connector {
     min-width: 0.5rem;
   }
+}
+
+.dark {
+  color-scheme: dark;
+  --background: 222 47% 8%;
+  --foreground: 210 40% 96%;
+  --card: 222 47% 11%;
+  --card-foreground: 210 40% 96%;
+  --popover: 222 47% 11%;
+  --popover-foreground: 210 40% 96%;
+  --secondary: 217 33% 17%;
+  --secondary-foreground: 210 40% 96%;
+  --muted: 217 33% 17%;
+  --muted-foreground: 215 20% 68%;
+  --accent: 217 33% 17%;
+  --accent-foreground: 210 40% 96%;
+  --border: 217 33% 23%;
+  --input: 217 33% 23%;
+}
+
+.dark body {
+  background: #0b1220;
+  color: #e2e8f0;
+}
+
+.dark header {
+  border-color: #26364d !important;
+  background-color: rgb(11 18 32 / 94%) !important;
+}
+
+.dark [class~="bg-white"],
+.dark [class~="bg-white/95"],
+.dark [class~="bg-white/90"] {
+  background-color: #111e30 !important;
+}
+
+.dark [class~="bg-slate-50"] {
+  background-color: #0b1628 !important;
+}
+
+.dark [class~="bg-slate-100"] {
+  background-color: #1a2940 !important;
+}
+
+.dark [class~="bg-blue-50"] {
+  background-color: #172b4b !important;
+}
+
+.dark [class~="text-slate-900"],
+.dark [class~="text-slate-800"] {
+  color: #f1f5f9 !important;
+}
+
+.dark [class~="text-slate-700"] {
+  color: #d4deea !important;
+}
+
+.dark [class~="text-slate-600"] {
+  color: #bdc9d8 !important;
+}
+
+.dark [class~="text-slate-500"] {
+  color: #9eacc0 !important;
+}
+
+.dark [class~="text-slate-400"] {
+  color: #8999ae !important;
+}
+
+.dark [class~="border-slate-100"],
+.dark [class~="border-slate-200"],
+.dark [class~="border-slate-300"] {
+  border-color: #293a52 !important;
+}
+
+.dark [class~="text-[#0B2D5B]"] {
+  color: #bfdbfe !important;
+}
+
+.dark .home-hero,
+.dark .home-skills-section,
+.dark .home-data-story,
+.dark .home-practice-section,
+.dark .home-innovation-section,
+.dark .catalog-page,
+.dark .dashboard-page,
+.dark .about-page {
+  background: #0b1628 !important;
+}
+
+.dark .home-data-story {
+  background-image: linear-gradient(90deg, transparent 49.9%, rgb(148 163 184 / 8%) 50%, transparent 50.1%) !important;
+}
+
+.dark .home-impact-strip,
+.dark .home-stat-card,
+.dark .home-skill-link,
+.dark .home-course-card,
+.dark .home-feature-card,
+.dark .home-testimonial-card {
+  border-color: #293a52 !important;
+  background-color: #111e30 !important;
+}
+
+.dark .home-hero .text-slate-600,
+.dark .home-hero .text-slate-500,
+.dark .home-hero .text-slate-700 {
+  color: #cbd5e1 !important;
+}
+
+.dark input,
+.dark textarea,
+.dark select {
+  border-color: #33445d;
+  background-color: #111e30;
+  color: #e2e8f0;
+}
+
+.dark input::placeholder,
+.dark textarea::placeholder {
+  color: #8292a8;
+}
+
+.dark .auth-page,
+.dark .auth-card {
+  border-color: #293a52;
+  background: #111e30;
+}
+
+.dark .home-hero .hero-title {
+  color: #f8fafc;
+}
+
+.dark .brand-logo-image-frame:not(.brand-logo-image-frame-dark) {
+  padding: 0.15rem 0.35rem;
+  border-radius: 0.65rem;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgb(255 255 255 / 18%), 0 5px 18px rgb(0 0 0 / 18%);
 }

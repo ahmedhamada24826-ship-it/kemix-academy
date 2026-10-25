@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ImageUploadField } from "@/components/upload/image-upload-field";
 import { PlusCircle, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -28,7 +29,19 @@ export interface CmsTestimonialItem {
   badge: string;
 }
 
+export interface CmsSkillItem {
+  title: string;
+  englishTitle: string;
+  description: string;
+  query: string;
+  icon: "chart" | "code" | "database" | "dashboard";
+}
+
 export interface HomepageCms {
+  preferences: {
+    theme: "light" | "dark";
+    locale: "ar" | "en";
+  };
   hero: {
     enabled: boolean;
     sortOrder: number;
@@ -43,13 +56,46 @@ export interface HomepageCms {
     videoTitle: string;
   };
   stats: { enabled: boolean; sortOrder: number; items: CmsStatItem[] };
+  impact: { enabled: boolean; sortOrder: number; items: string[] };
+  skills: {
+    enabled: boolean;
+    sortOrder: number;
+    eyebrow: string;
+    heading: string;
+    description: string;
+    items: CmsSkillItem[];
+  };
   featuredCourses: { enabled: boolean; sortOrder: number; heading: string; description: string };
+  dataStory: {
+    enabled: boolean;
+    sortOrder: number;
+    eyebrow: string;
+    heading: string;
+    description: string;
+    imageAlt: string;
+    note: string;
+  };
+  build: {
+    enabled: boolean;
+    sortOrder: number;
+    eyebrow: string;
+    heading: string;
+    description: string;
+    imageAlt: string;
+    steps: string[];
+  };
   about: { enabled: boolean; sortOrder: number; heading: string; description: string; imageUrl: string };
   features: { enabled: boolean; sortOrder: number; heading: string; description: string; items: CmsFeatureItem[] };
   instructors: { enabled: boolean; sortOrder: number; heading: string; description: string };
   testimonials: { enabled: boolean; sortOrder: number; heading: string; items: CmsTestimonialItem[] };
   cta: { enabled: boolean; sortOrder: number; heading: string; description: string; buttonText: string };
   footer: { enabled: boolean; sortOrder: number };
+  visuals: {
+    heroImageUrl: string;
+    dataStoryImageUrl: string;
+    buildImageUrl: string;
+    innovationImageUrl: string;
+  };
 }
 
 export type CmsSectionKey = keyof HomepageCms;
@@ -61,6 +107,7 @@ interface SectionShellProps {
   sortOrder: number;
   onToggle: (enabled: boolean) => void;
   onSortOrder: (sortOrder: number) => void;
+  showOrder?: boolean;
   children: React.ReactNode;
 }
 
@@ -71,6 +118,7 @@ function SectionShell({
   sortOrder,
   onToggle,
   onSortOrder,
+  showOrder = true,
   children,
 }: SectionShellProps) {
   return (
@@ -81,17 +129,17 @@ function SectionShell({
           <p className="text-[11px] text-slate-500">{description}</p>
         </div>
         <div className="flex items-center gap-3 flex-shrink-0">
-          <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
-            <span>الترتيب</span>
-            <input
-              type="number"
-              min={0}
-              max={99}
-              value={sortOrder}
-              onChange={(e) => onSortOrder(Number(e.target.value) || 0)}
-              className="h-7 w-16 rounded-md border border-slate-300 px-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
-            />
-          </label>
+          {showOrder && <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600">
+              <span>الترتيب</span>
+              <input
+                type="number"
+                min={0}
+                max={99}
+                value={sortOrder}
+                onChange={(e) => onSortOrder(Number(e.target.value) || 0)}
+                className="h-7 w-16 rounded-md border border-slate-300 px-2 text-xs font-mono text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+              />
+            </label>}
           <label className="flex items-center gap-1.5 text-[11px] font-bold text-slate-600 cursor-pointer">
             <input
               type="checkbox"
@@ -307,33 +355,39 @@ export function HomepageCmsEditor({ value, onChange }: HomepageCmsEditorProps) {
             onChange={(ctaSecondary) => setSection("hero", { ctaSecondary })}
           />
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Field
-            label="رابط صورة القسم الرئيسي"
-            value={value.hero.imageUrl}
-            maxLength={2000}
-            mono
-            ltr
-            placeholder="https://..."
-            onChange={(imageUrl) => setSection("hero", { imageUrl })}
-          />
-          <Field
-            label="رابط فيديو القسم الرئيسي"
-            value={value.hero.videoUrl}
-            maxLength={2000}
-            mono
-            ltr
-            placeholder="https://..."
-            onChange={(videoUrl) => setSection("hero", { videoUrl })}
-          />
-        </div>
-        <Field
-          label="عنوان الفيديو"
-          value={value.hero.videoTitle}
-          maxLength={200}
-          onChange={(videoTitle) => setSection("hero", { videoTitle })}
-        />
       </SectionShell>
+
+      <Card className="border-slate-200 bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-sm font-bold text-slate-900">صور الصفحة الرئيسية</CardTitle>
+          <p className="text-[11px] text-slate-500">
+            استبدل الصور برفع صورة جديدة أو رابط مباشر. إزالة الصورة تُخفيها من الصفحة الرئيسية ولا تحذف الملف من خدمة التخزين.
+          </p>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          <ImageUploadField
+            label="الصورة الرئيسية"
+            value={value.visuals.heroImageUrl}
+            onChange={(heroImageUrl) => setSection("visuals", { heroImageUrl })}
+            hint="الصورة البارزة بجانب عنوان الصفحة الرئيسية."
+          />
+          <ImageUploadField
+            label="صورة تحليل البيانات"
+            value={value.visuals.dataStoryImageUrl}
+            onChange={(dataStoryImageUrl) => setSection("visuals", { dataStoryImageUrl })}
+          />
+          <ImageUploadField
+            label="صورة التعلّم بالتطبيق"
+            value={value.visuals.buildImageUrl}
+            onChange={(buildImageUrl) => setSection("visuals", { buildImageUrl })}
+          />
+          <ImageUploadField
+            label="صورة الابتكار"
+            value={value.visuals.innovationImageUrl}
+            onChange={(innovationImageUrl) => setSection("visuals", { innovationImageUrl })}
+          />
+        </CardContent>
+      </Card>
 
       {/* STATS */}
       <SectionShell
@@ -369,6 +423,76 @@ export function HomepageCmsEditor({ value, onChange }: HomepageCmsEditorProps) {
         />
       </SectionShell>
 
+      <SectionShell
+        title="محاور التعلّم"
+        description="العبارات القصيرة الظاهرة بين القسم الرئيسي وبقية الصفحة."
+        enabled={value.impact.enabled}
+        sortOrder={value.impact.sortOrder}
+        onToggle={(enabled) => setSection("impact", { enabled })}
+        onSortOrder={(sortOrder) => setSection("impact", { sortOrder })}
+      >
+        <ListEditor
+          items={value.impact.items.map((label) => ({ label }))}
+          maxItems={8}
+          addLabel="إضافة محور"
+          createItem={() => ({ label: "" })}
+          onChange={(items) => setSection("impact", { items: items.map((item) => item.label) })}
+          renderItem={(item, update) => (
+            <Field
+              label="النص"
+              value={item.label}
+              maxLength={120}
+              onChange={(label) => update({ label })}
+            />
+          )}
+        />
+      </SectionShell>
+
+      <SectionShell
+        title="مجالات التعلّم"
+        description="عنوان ووصف وبطاقات مجالات المهارات المعروضة على الصفحة الرئيسية."
+        enabled={value.skills.enabled}
+        sortOrder={value.skills.sortOrder}
+        onToggle={(enabled) => setSection("skills", { enabled })}
+        onSortOrder={(sortOrder) => setSection("skills", { sortOrder })}
+      >
+        <Field label="الشارة" value={value.skills.eyebrow} maxLength={200} onChange={(eyebrow) => setSection("skills", { eyebrow })} />
+        <Field label="العنوان" value={value.skills.heading} maxLength={200} onChange={(heading) => setSection("skills", { heading })} />
+        <Field label="الوصف" value={value.skills.description} maxLength={600} multiline rows={2} onChange={(description) => setSection("skills", { description })} />
+        <ListEditor
+          items={value.skills.items}
+          maxItems={8}
+          addLabel="إضافة مجال"
+          createItem={() => ({ title: "", englishTitle: "", description: "", query: "", icon: "chart" as const })}
+          onChange={(items) => setSection("skills", { items })}
+          renderItem={(item, update) => (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="اسم المجال" value={item.title} maxLength={120} onChange={(title) => update({ title })} />
+                <Field label="الاسم التقني" value={item.englishTitle} maxLength={120} ltr onChange={(englishTitle) => update({ englishTitle })} />
+              </div>
+              <Field label="الوصف" value={item.description} maxLength={600} multiline rows={2} onChange={(description) => update({ description })} />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Field label="فلتر الكورسات" value={item.query} maxLength={120} ltr onChange={(query) => update({ query })} />
+                <label className="space-y-1 text-[11px] font-bold text-slate-700">
+                  <span>الأيقونة</span>
+                  <select
+                    value={item.icon}
+                    onChange={(event) => update({ icon: event.target.value as CmsSkillItem["icon"] })}
+                    className="h-9 w-full rounded-md border border-slate-300 bg-white px-2 text-xs"
+                  >
+                    <option value="chart">تحليل البيانات</option>
+                    <option value="code">برمجة</option>
+                    <option value="database">قواعد البيانات</option>
+                    <option value="dashboard">لوحات المعلومات</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+          )}
+        />
+      </SectionShell>
+
       {/* FEATURED COURSES */}
       <SectionShell
         title="الكورسات المميزة"
@@ -391,6 +515,45 @@ export function HomepageCmsEditor({ value, onChange }: HomepageCmsEditorProps) {
           multiline
           rows={2}
           onChange={(description) => setSection("featuredCourses", { description })}
+        />
+      </SectionShell>
+
+      <SectionShell
+        title="قصة تحليل البيانات"
+        description="النصوص البديلة والتوضيحية بجانب صورة تحليل البيانات."
+        enabled={value.dataStory.enabled}
+        sortOrder={value.dataStory.sortOrder}
+        onToggle={(enabled) => setSection("dataStory", { enabled })}
+        onSortOrder={(sortOrder) => setSection("dataStory", { sortOrder })}
+      >
+        <Field label="الشارة" value={value.dataStory.eyebrow} maxLength={200} onChange={(eyebrow) => setSection("dataStory", { eyebrow })} />
+        <Field label="العنوان" value={value.dataStory.heading} maxLength={200} onChange={(heading) => setSection("dataStory", { heading })} />
+        <Field label="الوصف" value={value.dataStory.description} maxLength={1000} multiline rows={3} onChange={(description) => setSection("dataStory", { description })} />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Field label="النص البديل للصورة" value={value.dataStory.imageAlt} maxLength={300} onChange={(imageAlt) => setSection("dataStory", { imageAlt })} />
+          <Field label="الملاحظة على الصورة" value={value.dataStory.note} maxLength={300} onChange={(note) => setSection("dataStory", { note })} />
+        </div>
+      </SectionShell>
+
+      <SectionShell
+        title="التعلّم بالتطبيق"
+        description="محتوى قسم التطبيق العملي وخطواته."
+        enabled={value.build.enabled}
+        sortOrder={value.build.sortOrder}
+        onToggle={(enabled) => setSection("build", { enabled })}
+        onSortOrder={(sortOrder) => setSection("build", { sortOrder })}
+      >
+        <Field label="الشارة" value={value.build.eyebrow} maxLength={200} onChange={(eyebrow) => setSection("build", { eyebrow })} />
+        <Field label="العنوان" value={value.build.heading} maxLength={200} onChange={(heading) => setSection("build", { heading })} />
+        <Field label="الوصف" value={value.build.description} maxLength={1000} multiline rows={3} onChange={(description) => setSection("build", { description })} />
+        <Field label="النص البديل للصورة" value={value.build.imageAlt} maxLength={300} onChange={(imageAlt) => setSection("build", { imageAlt })} />
+        <ListEditor
+          items={value.build.steps.map((label) => ({ label }))}
+          maxItems={8}
+          addLabel="إضافة خطوة"
+          createItem={() => ({ label: "" })}
+          onChange={(items) => setSection("build", { steps: items.map((item) => item.label) })}
+          renderItem={(item, update) => <Field label="الخطوة" value={item.label} maxLength={120} onChange={(label) => update({ label })} />}
         />
       </SectionShell>
 
@@ -417,14 +580,11 @@ export function HomepageCmsEditor({ value, onChange }: HomepageCmsEditorProps) {
           rows={4}
           onChange={(description) => setSection("about", { description })}
         />
-        <Field
-          label="رابط صورة القسم"
+        <ImageUploadField
+          label="صورة قسم عن الأكاديمية"
           value={value.about.imageUrl}
-          maxLength={2000}
-          mono
-          ltr
-          placeholder="https://..."
           onChange={(imageUrl) => setSection("about", { imageUrl })}
+          hint="إذا لم تُحدد صورة هنا فستُستخدم صورة الابتكار من صور الصفحة الرئيسية."
         />
       </SectionShell>
 
@@ -475,31 +635,6 @@ export function HomepageCmsEditor({ value, onChange }: HomepageCmsEditorProps) {
               />
             </div>
           )}
-        />
-      </SectionShell>
-
-      {/* INSTRUCTORS */}
-      <SectionShell
-        title="المدربون"
-        description="عنوان قسم عرض المدربين. يظهر القسم عند تفعيله فعلياً من الأعلى."
-        enabled={value.instructors.enabled}
-        sortOrder={value.instructors.sortOrder}
-        onToggle={(enabled) => setSection("instructors", { enabled })}
-        onSortOrder={(sortOrder) => setSection("instructors", { sortOrder })}
-      >
-        <Field
-          label="العنوان"
-          value={value.instructors.heading}
-          maxLength={200}
-          onChange={(heading) => setSection("instructors", { heading })}
-        />
-        <Field
-          label="الوصف"
-          value={value.instructors.description}
-          maxLength={600}
-          multiline
-          rows={2}
-          onChange={(description) => setSection("instructors", { description })}
         />
       </SectionShell>
 
@@ -596,6 +731,7 @@ export function HomepageCmsEditor({ value, onChange }: HomepageCmsEditorProps) {
         description="إظهار أو إخفاء تذييل الصفحة. النصوص تُدار من تبويب «نصوص الموقع»."
         enabled={value.footer.enabled}
         sortOrder={value.footer.sortOrder}
+        showOrder={false}
         onToggle={(enabled) => setSection("footer", { enabled })}
         onSortOrder={(sortOrder) => setSection("footer", { sortOrder })}
       >
@@ -606,4 +742,3 @@ export function HomepageCmsEditor({ value, onChange }: HomepageCmsEditorProps) {
     </div>
   );
 }
-

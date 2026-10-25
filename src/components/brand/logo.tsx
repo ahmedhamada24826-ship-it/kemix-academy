@@ -8,6 +8,7 @@ export interface LogoProps {
   showTagline?: boolean;
   href?: string;
   className?: string;
+  imageUrl?: string | null;
 }
 
 export function KemixLogoIcon({
@@ -112,6 +113,7 @@ export function Logo({
   showTagline = false,
   href,
   className,
+  imageUrl,
 }: LogoProps) {
   const isDarkBg = variant === "dark";
   const isMonochrome = variant === "monochrome";
@@ -153,7 +155,7 @@ export function Logo({
         )}
       >
         <img
-          src="/kemix-academy-logo.png"
+          src={imageUrl || "/kemix-academy-logo.png"}
           alt="KEMIX Academy — Learn → Build → Grow"
           className="brand-logo-image"
         />

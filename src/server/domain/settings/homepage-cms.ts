@@ -15,7 +15,19 @@ export interface CmsTestimonialItem {
   badge: string;
 }
 
+export interface CmsSkillItem {
+  title: string;
+  englishTitle: string;
+  description: string;
+  query: string;
+  icon: string;
+}
+
 export interface HomepageCms {
+  preferences: {
+    theme: "light" | "dark";
+    locale: "ar" | "en";
+  };
   hero: {
     enabled: boolean;
     sortOrder: number;
@@ -34,11 +46,42 @@ export interface HomepageCms {
     sortOrder: number;
     items: CmsStatItem[];
   };
+  impact: {
+    enabled: boolean;
+    sortOrder: number;
+    items: string[];
+  };
+  skills: {
+    enabled: boolean;
+    sortOrder: number;
+    eyebrow: string;
+    heading: string;
+    description: string;
+    items: CmsSkillItem[];
+  };
   featuredCourses: {
     enabled: boolean;
     sortOrder: number;
     heading: string;
     description: string;
+  };
+  dataStory: {
+    enabled: boolean;
+    sortOrder: number;
+    eyebrow: string;
+    heading: string;
+    description: string;
+    imageAlt: string;
+    note: string;
+  };
+  build: {
+    enabled: boolean;
+    sortOrder: number;
+    eyebrow: string;
+    heading: string;
+    description: string;
+    imageAlt: string;
+    steps: string[];
   };
   about: {
     enabled: boolean;
@@ -77,9 +120,16 @@ export interface HomepageCms {
     enabled: boolean;
     sortOrder: number;
   };
+  visuals: {
+    heroImageUrl: string;
+    dataStoryImageUrl: string;
+    buildImageUrl: string;
+    innovationImageUrl: string;
+  };
 }
 
 export const DEFAULT_HOMEPAGE_CMS: HomepageCms = {
+  preferences: { theme: "light", locale: "ar" },
   hero: {
     enabled: true,
     sortOrder: 0,
@@ -96,7 +146,7 @@ export const DEFAULT_HOMEPAGE_CMS: HomepageCms = {
   },
   stats: {
     enabled: true,
-    sortOrder: 1,
+    sortOrder: 2,
     items: [
       { value: "+5,000", label: "طالب ومتدرب مسجل" },
       { value: "100%", label: "تطبيق عملي على بيانات حقيقية" },
@@ -104,15 +154,51 @@ export const DEFAULT_HOMEPAGE_CMS: HomepageCms = {
       { value: "شهادات موثقة", label: "برمز تحقق رقمي دائم" },
     ],
   },
+  impact: {
+    enabled: true,
+    sortOrder: 1,
+    items: ["مهارات المستقبل", "التعلّم بالتطبيق", "التفكير التحليلي", "الابتكار وصناعة الفرص"],
+  },
+  skills: {
+    enabled: true,
+    sortOrder: 3,
+    eyebrow: "مجالات تتغير معها طريقة رؤيتك للعالم",
+    heading: "المهارات التي تصنع الفارق.",
+    description: "اكتشف المجالات التي تساعدك على فهم العالم الرقمي، وتحليل المعلومات، وبناء حلول أكثر ذكاءً.",
+    items: [
+      { title: "تحليل البيانات", englishTitle: "Data Analytics", description: "اكتشف ما تخبرك به البيانات، وحوّل الأسئلة إلى رؤى قابلة للفهم.", query: "Data", icon: "chart" },
+      { title: "البرمجة بـ Python", englishTitle: "Python", description: "ابدأ ببناء مهارات برمجية تساعدك على استكشاف البيانات ومعالجتها.", query: "Python", icon: "code" },
+      { title: "قواعد البيانات", englishTitle: "SQL", description: "نظّم البيانات واستخرج منها إجابات دقيقة باستخدام SQL.", query: "SQL", icon: "database" },
+      { title: "ذكاء الأعمال", englishTitle: "Power BI", description: "قدّم المعلومات بوضوح عبر لوحات وتقارير تفاعلية.", query: "Power BI", icon: "dashboard" },
+    ],
+  },
   featuredCourses: {
     enabled: true,
-    sortOrder: 2,
+    sortOrder: 4,
     heading: "استكشف أقوى الكورسات الموجهة لسوق العمل",
     description: "مسارات تدريبية مصممة خطوة بخطوة لبناء المهارات التحليلية والبرمجية.",
   },
+  dataStory: {
+    enabled: true,
+    sortOrder: 5,
+    eyebrow: "من السؤال إلى الرؤية",
+    heading: "وراء كل رقم… فرصة لاكتشاف شيء جديد.",
+    description: "تعلّم كيف تحوّل البيانات من أرقام متفرقة إلى رؤى واضحة تساعدك على فهم المشكلات واتخاذ قرارات أفضل.",
+    imageAlt: "لوحة تحليل بيانات تعرض رسومًا بيانية ومؤشرات تحليلية على شاشة حاسوب",
+    note: "مثال بصري توضيحي — لا يعرض مؤشرات أداء للأكاديمية",
+  },
+  build: {
+    enabled: true,
+    sortOrder: 6,
+    eyebrow: "تعلّم بالممارسة",
+    heading: "ما تتعلّمه اليوم، تستطيع أن تبني به غدًا.",
+    description: "المعرفة تصبح أكثر قيمة عندما تتحول إلى تطبيق. طوّر مهاراتك، واختبر أفكارك، وابدأ ببناء مشروعات تعبّر عن قدراتك.",
+    imageAlt: "فريق يعمل معًا على أجهزة الحاسوب ضمن مساحة تعلّم وتعاون",
+    steps: ["تعلّم المفهوم", "جرّب بنفسك", "طوّر الحل"],
+  },
   about: {
     enabled: true,
-    sortOrder: 3,
+    sortOrder: 7,
     heading: "لماذا تختار أكاديمية كيميكس التعليمية؟",
     description:
       "صُممت منصتنا خصيصاً للمتخصصين في البيانات الذين يبحثون عن مهارات حقيقية قابلة للتطبيق مباشرة وليست مجرد معلومات نظرية.",
@@ -120,7 +206,7 @@ export const DEFAULT_HOMEPAGE_CMS: HomepageCms = {
   },
   features: {
     enabled: true,
-    sortOrder: 4,
+    sortOrder: 8,
     heading: "المنهجية التعليمية",
     description: "",
     items: [
@@ -148,13 +234,13 @@ export const DEFAULT_HOMEPAGE_CMS: HomepageCms = {
   },
   instructors: {
     enabled: false,
-    sortOrder: 5,
+    sortOrder: 9,
     heading: "المدربون",
     description: "نخبة من الممارسين في تحليل البيانات وذكاء الأعمال.",
   },
   testimonials: {
     enabled: true,
-    sortOrder: 6,
+    sortOrder: 10,
     heading: "تجارب خريجينا في سوق العمل",
     items: [
       {
@@ -182,7 +268,7 @@ export const DEFAULT_HOMEPAGE_CMS: HomepageCms = {
   },
   cta: {
     enabled: true,
-    sortOrder: 7,
+    sortOrder: 11,
     heading: "ابدأ رحلتك في احتراف علوم البيانات اليوم",
     description: "انضم إلى آلاف الطلاب والمحللين الذين يبنون مشاريع حقيقية مع أكاديمية كيميكس.",
     buttonText: "إنشاء حساب مجاني",
@@ -191,12 +277,22 @@ export const DEFAULT_HOMEPAGE_CMS: HomepageCms = {
     enabled: true,
     sortOrder: 8,
   },
+  visuals: {
+    heroImageUrl: "/images/homepage/hero-team.webp",
+    dataStoryImageUrl: "/images/homepage/data-analytics.webp",
+    buildImageUrl: "/images/homepage/learning-team.webp",
+    innovationImageUrl: "/images/homepage/strategy-team.webp",
+  },
 };
 
 const SECTION_KEYS = [
   "hero",
   "stats",
+  "impact",
+  "skills",
   "featuredCourses",
+  "dataStory",
+  "build",
   "about",
   "features",
   "instructors",
@@ -215,6 +311,14 @@ export function mergeHomepageCms(raw: unknown): HomepageCms {
   }
 
   const merged = structuredClone(DEFAULT_HOMEPAGE_CMS);
+  if (isRecord(raw.preferences)) {
+    if (raw.preferences.theme === "light" || raw.preferences.theme === "dark") {
+      merged.preferences.theme = raw.preferences.theme;
+    }
+    if (raw.preferences.locale === "ar" || raw.preferences.locale === "en") {
+      merged.preferences.locale = raw.preferences.locale;
+    }
+  }
 
   // Section-wise shallow merge. The record view keeps the union-typed section keys
   // assignable without weakening the public HomepageCms contract.
@@ -229,10 +333,34 @@ export function mergeHomepageCms(raw: unknown): HomepageCms {
     };
   }
 
+  if (isRecord(raw.visuals)) {
+    merged.visuals = {
+      ...merged.visuals,
+      heroImageUrl: String(raw.visuals.heroImageUrl ?? merged.visuals.heroImageUrl),
+      dataStoryImageUrl: String(raw.visuals.dataStoryImageUrl ?? merged.visuals.dataStoryImageUrl),
+      buildImageUrl: String(raw.visuals.buildImageUrl ?? merged.visuals.buildImageUrl),
+      innovationImageUrl: String(raw.visuals.innovationImageUrl ?? merged.visuals.innovationImageUrl),
+    };
+  }
+
   if (Array.isArray((raw.stats as { items?: unknown })?.items)) {
     merged.stats.items = (raw.stats as { items: CmsStatItem[] }).items.map((item) => ({
       value: String(item?.value ?? ""),
       label: String(item?.label ?? ""),
+    }));
+  }
+
+  if (Array.isArray((raw.impact as { items?: unknown })?.items)) {
+    merged.impact.items = (raw.impact as { items: unknown[] }).items.map((item) => String(item ?? ""));
+  }
+
+  if (Array.isArray((raw.skills as { items?: unknown })?.items)) {
+    merged.skills.items = (raw.skills as { items: CmsSkillItem[] }).items.map((item) => ({
+      title: String(item?.title ?? ""),
+      englishTitle: String(item?.englishTitle ?? ""),
+      description: String(item?.description ?? ""),
+      query: String(item?.query ?? ""),
+      icon: String(item?.icon ?? "chart"),
     }));
   }
 

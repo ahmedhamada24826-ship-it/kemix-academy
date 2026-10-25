@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useLanguage } from "@/components/providers/language-provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
@@ -10,14 +11,10 @@ import { homepageContent, legacyHomepageDefaults } from "@/config/homepage-conte
 import {
   ArrowLeft,
   Database,
-  Terminal,
   BarChart3,
-  Award,
   Clock,
   Sparkles,
   BookOpen,
-  FileSpreadsheet,
-  Layers,
   Laptop,
   Lightbulb,
   Code2,
@@ -111,6 +108,7 @@ interface SettingsData {
   cms: {
     hero: {
       enabled: boolean;
+      sortOrder: number;
       badge: string;
       heading: string;
       subheading: string;
@@ -120,35 +118,82 @@ interface SettingsData {
     };
     stats: {
       enabled: boolean;
+      sortOrder: number;
       items: { value: string; label: string }[];
+    };
+    impact: { enabled: boolean; sortOrder: number; items: string[] };
+    skills: {
+      enabled: boolean;
+      sortOrder: number;
+      eyebrow: string;
+      heading: string;
+      description: string;
+      items: { title: string; englishTitle: string; description: string; query: string; icon: string }[];
     };
     featuredCourses: {
       enabled: boolean;
+      sortOrder: number;
       heading: string;
       description: string;
     };
+    dataStory: {
+      enabled: boolean;
+      sortOrder: number;
+      eyebrow: string;
+      heading: string;
+      description: string;
+      imageAlt: string;
+      note: string;
+    };
+    build: {
+      enabled: boolean;
+      sortOrder: number;
+      eyebrow: string;
+      heading: string;
+      description: string;
+      imageAlt: string;
+      steps: string[];
+    };
+    about: {
+      enabled: boolean;
+      sortOrder: number;
+      heading: string;
+      description: string;
+      imageUrl: string;
+    };
     features: {
       enabled: boolean;
+      sortOrder: number;
       heading: string;
       description: string;
       items: { title: string; description: string }[];
     };
     testimonials: {
       enabled: boolean;
+      sortOrder: number;
       heading: string;
       items: { quote: string; author: string; role: string; badge: string }[];
     };
     cta: {
       enabled: boolean;
+      sortOrder: number;
       heading: string;
       description: string;
       buttonText: string;
+    };
+    visuals: {
+      heroImageUrl: string;
+      dataStoryImageUrl: string;
+      buildImageUrl: string;
+      innovationImageUrl: string;
     };
   };
 }
 
 const DEFAULT_CMS = {
   hero: {
+    enabled: true,
+    sortOrder: 0,
     badge: "من مصر إلى العالم",
     heading: "مستقبلك أكبر من مجرد شهادة.",
     subheading: "ابنِ مهاراتك. اصنع فرصتك. وكن جزءًا من المستقبل.",
@@ -156,37 +201,44 @@ const DEFAULT_CMS = {
     ctaPrimary: "ابدأ رحلتك الآن",
     ctaSecondary: "اكتشف مسارات التعلّم",
   },
-  stats: { enabled: true, items: [] },
-  featuredCourses: { enabled: true, heading: "استكشف المسارات التعليمية المتاحة", description: "تعرّف على الدورات المتوفرة حاليًا واختر ما يناسب خطوتك التالية." },
-  features: { enabled: true, heading: "المنهجية التعليمية", description: "", items: [] },
-  testimonials: { enabled: true, heading: "تجارب خريجينا في سوق العمل", items: [] },
-  cta: { enabled: true, heading: homepageContent.finalCta.heading, description: homepageContent.finalCta.description, buttonText: homepageContent.finalCta.button },
+  stats: { enabled: true, sortOrder: 2, items: [] },
+  impact: { enabled: true, sortOrder: 1, items: homepageContent.impact.map((item) => item.label) },
+  skills: {
+    enabled: true,
+    sortOrder: 3,
+    eyebrow: homepageContent.skills.eyebrow,
+    heading: homepageContent.skills.heading,
+    description: homepageContent.skills.description,
+    items: homepageContent.skills.items,
+  },
+  featuredCourses: { enabled: true, sortOrder: 4, heading: "استكشف المسارات التعليمية المتاحة", description: "تعرّف على الدورات المتوفرة حاليًا واختر ما يناسب خطوتك التالية." },
+  dataStory: { enabled: true, sortOrder: 5, ...homepageContent.dataStory },
+  build: { enabled: true, sortOrder: 6, ...homepageContent.build },
+  about: { enabled: true, sortOrder: 7, heading: homepageContent.innovation.heading, description: homepageContent.innovation.description, imageUrl: "" },
+  features: {
+    enabled: true,
+    sortOrder: 8,
+    heading: "المنهجية التعليمية",
+    description: "",
+    items: [
+      { title: "تعلّم بالتطبيق", description: "حوّل المفاهيم إلى ممارسة من خلال التكليفات والأنشطة التعليمية المتاحة ضمن المسارات." },
+      { title: "أدوات تقنية متنوعة", description: "تعرّف على أدوات تحليل البيانات والبرمجة وقواعد البيانات ضمن تجربة تعلّم متدرجة." },
+      { title: "تقدّم خطوة بخطوة", description: "نظّم رحلة التعلّم وتابع الدروس والاختبارات والتكليفات من لوحة دراستك." },
+      { title: "مساحة للتطور", description: "ابنِ أساسًا معرفيًا يمكنك تطويره مع كل مهارة جديدة وتجربة تطبيقية." },
+    ],
+  },
+  testimonials: { enabled: true, sortOrder: 10, heading: "تجارب خريجينا في سوق العمل", items: [] },
+  cta: { enabled: true, sortOrder: 11, heading: homepageContent.finalCta.heading, description: homepageContent.finalCta.description, buttonText: homepageContent.finalCta.button },
+  visuals: {
+    heroImageUrl: "/images/homepage/hero-team.webp",
+    dataStoryImageUrl: "/images/homepage/data-analytics.webp",
+    buildImageUrl: "/images/homepage/learning-team.webp",
+    innovationImageUrl: "/images/homepage/strategy-team.webp",
+  },
 };
 
-const featuresDefault = [
-  {
-    title: "تعلّم بالتطبيق",
-    description: "حوّل المفاهيم إلى ممارسة من خلال التكليفات والأنشطة التعليمية المتاحة ضمن المسارات.",
-    icon: <FileSpreadsheet className="h-6 w-6 text-blue-500" />,
-  },
-  {
-    title: "أدوات تقنية متنوعة",
-    description: "تعرّف على أدوات تحليل البيانات والبرمجة وقواعد البيانات ضمن تجربة تعلّم متدرجة.",
-    icon: <Terminal className="h-6 w-6 text-cyan-500" />,
-  },
-  {
-    title: "تقدّم خطوة بخطوة",
-    description: "نظّم رحلة التعلّم وتابع الدروس والاختبارات والتكليفات من لوحة دراستك.",
-    icon: <Layers className="h-6 w-6 text-indigo-500" />,
-  },
-  {
-    title: "مساحة للتطور",
-    description: "ابنِ أساسًا معرفيًا يمكنك تطويره مع كل مهارة جديدة وتجربة تطبيقية.",
-    icon: <Award className="h-6 w-6 text-emerald-500" />,
-  },
-];
-
 export default function HomePage() {
+  const { locale, dir } = useLanguage();
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cms, setCms] = useState<SettingsData["cms"] | null>(null);
@@ -221,10 +273,16 @@ export default function HomePage() {
             if (s.cms) {
               const storedHero = s.cms.hero || DEFAULT_CMS.hero;
               const storedStats = s.cms.stats || DEFAULT_CMS.stats;
+              const storedImpact = s.cms.impact || DEFAULT_CMS.impact;
+              const storedSkills = s.cms.skills || DEFAULT_CMS.skills;
               const storedCourses = s.cms.featuredCourses || DEFAULT_CMS.featuredCourses;
+              const storedDataStory = s.cms.dataStory || DEFAULT_CMS.dataStory;
+              const storedBuild = s.cms.build || DEFAULT_CMS.build;
+              const storedAbout = s.cms.about || DEFAULT_CMS.about;
               const storedFeatures = s.cms.features || DEFAULT_CMS.features;
               const storedTestimonials = s.cms.testimonials || DEFAULT_CMS.testimonials;
               const storedCta = s.cms.cta || DEFAULT_CMS.cta;
+              const storedVisuals = s.cms.visuals || DEFAULT_CMS.visuals;
 
               setCms({
                 hero: {
@@ -240,17 +298,22 @@ export default function HomePage() {
                   ...storedStats,
                   items: isLegacyStatSet(storedStats.items) ? [] : storedStats.items,
                 },
+                impact: { ...DEFAULT_CMS.impact, ...storedImpact },
+                skills: { ...DEFAULT_CMS.skills, ...storedSkills },
                 featuredCourses: {
                   ...storedCourses,
                   heading: keepEditedCopy(storedCourses.heading, "استكشف أقوى الكورسات الموجهة لسوق العمل", "استكشف المسارات التعليمية المتاحة"),
                   description: keepEditedCopy(storedCourses.description, "مسارات تدريبية مصممة خطوة بخطوة لبناء المهارات التحليلية والبرمجية.", DEFAULT_CMS.featuredCourses.description),
                 },
+                dataStory: { ...DEFAULT_CMS.dataStory, ...storedDataStory },
+                build: { ...DEFAULT_CMS.build, ...storedBuild },
+                about: { ...DEFAULT_CMS.about, ...storedAbout },
                 features: {
                   ...storedFeatures,
                   items:
                     matchesDefaultItems(storedFeatures.items, legacyHomepageDefaults.features) ||
                     matchesDefaultItems(storedFeatures.items, legacyHomepageDefaults.pageFeatures)
-                      ? []
+                      ? DEFAULT_CMS.features.items
                       : storedFeatures.items,
                 },
                 testimonials: {
@@ -263,23 +326,36 @@ export default function HomePage() {
                   description: keepEditedCopy(storedCta.description, legacyHomepageDefaults.cta.description, homepageContent.finalCta.description),
                   buttonText: keepEditedCopy(storedCta.buttonText, "إنشاء حساب مجاني", homepageContent.finalCta.button),
                 },
+                visuals: { ...DEFAULT_CMS.visuals, ...storedVisuals },
               });
             }
           }
         }
-      } catch {
-        /* settings are optional — CMS defaults are used */
+      } catch (error) {
+        console.error("Failed to load homepage settings; using CMS defaults", error);
       }
     }
     loadSettings();
   }, []);
 
   const hero = cms?.hero ?? DEFAULT_CMS.hero;
+  const displayHero = locale === "en"
+    ? {
+        ...hero,
+        badge: "From Egypt to the world",
+        heading: "Your future is bigger than a certificate.",
+        subheading: "Learn • Build • Grow",
+        description: "At KEMIX Academy, you learn practical technology and transform ideas into skills that unlock real opportunities in data, AI, and innovation.",
+        ctaPrimary: "Start your journey",
+        ctaSecondary: "Explore learning paths",
+      }
+    : hero;
   const stats = cms?.stats ?? DEFAULT_CMS.stats;
   const featuredCourses = cms?.featuredCourses ?? DEFAULT_CMS.featuredCourses;
   const features = cms?.features ?? DEFAULT_CMS.features;
   const testimonials = cms?.testimonials ?? DEFAULT_CMS.testimonials;
   const cta = cms?.cta ?? DEFAULT_CMS.cta;
+  const visuals = cms?.visuals ?? DEFAULT_CMS.visuals;
   const ctaHref = cta.buttonText === homepageContent.finalCta.button ? "/courses" : "/register";
 
   const formatDuration = (seconds: number) => {
@@ -306,37 +382,37 @@ export default function HomePage() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen" dir="rtl">
+    <div className="flex flex-col min-h-screen" dir={dir}>
       {/* Hero Section */}
-      <section className="home-hero relative overflow-hidden px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24" dir="rtl">
+      {hero.enabled && <section className="home-hero relative overflow-hidden px-4 py-14 sm:px-6 sm:py-20 lg:px-8 lg:py-24" dir={dir} style={{ order: hero.sortOrder }}>
         <div className="home-hero-grid absolute inset-0" aria-hidden="true" />
         <div className="home-hero-glow home-hero-glow-one" aria-hidden="true" />
         <div className="home-hero-glow home-hero-glow-two" aria-hidden="true" />
-        <div className="container relative mx-auto grid max-w-7xl items-center gap-12 lg:grid-cols-[1.02fr_0.98fr] lg:gap-16">
+        <div className={`container relative mx-auto grid max-w-7xl items-center gap-12 ${visuals.heroImageUrl ? "lg:grid-cols-[1.02fr_0.98fr] lg:gap-16" : ""}`}>
           <div className="home-hero-copy space-y-6">
             <div className="hero-badge inline-flex items-center gap-2 rounded-full px-4 py-2 text-xs font-bold">
               <Sparkles className="h-4 w-4 text-blue-600" />
-              <span>{hero.badge}</span>
+              <span>{displayHero.badge}</span>
             </div>
             <h1 className="hero-title max-w-2xl text-4xl font-black leading-[1.35] tracking-tight sm:text-5xl lg:text-[3.65rem]">
-              {hero.heading}
+              {displayHero.heading}
             </h1>
             <p className="max-w-xl text-lg font-bold leading-relaxed text-[#2563EB] sm:text-xl">
-              {hero.subheading}
+              {displayHero.subheading}
             </p>
             <p className="max-w-xl text-base leading-8 text-slate-600 sm:text-lg">
-              {hero.description}
+              {displayHero.description}
             </p>
             <div className="flex flex-wrap items-center gap-3 pt-2">
               <Link href="/register">
                 <Button size="lg" className="h-12 gap-2 rounded-xl bg-[#0B2D5B] px-6 font-bold text-white shadow-lg shadow-blue-950/15 transition hover:-translate-y-0.5 hover:bg-[#2563EB]">
-                  <span>{hero.ctaPrimary}</span>
+                  <span>{displayHero.ctaPrimary}</span>
                   <ArrowLeft className="h-4 w-4" />
                 </Button>
               </Link>
               <Link href="/courses">
                 <Button variant="outline" size="lg" className="h-12 rounded-xl border-slate-300 bg-white/80 px-6 font-bold text-[#0B2D5B] hover:border-blue-300 hover:bg-blue-50">
-                  {hero.ctaSecondary}
+                  {displayHero.ctaSecondary}
                 </Button>
               </Link>
             </div>
@@ -347,50 +423,52 @@ export default function HomePage() {
             </p>
           </div>
 
-          <div className="home-visual relative mx-auto w-full max-w-[610px]">
-            <div className="home-visual-frame relative aspect-[4/3] overflow-hidden rounded-[1.75rem] sm:aspect-[1.2/1]">
-              <EditorialPhoto
-                src="/images/homepage/hero-team.webp"
-                alt="مختصّان يعملان على الحاسوب في مساحة عمل تقنية حديثة"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                priority
-                className="absolute inset-0"
-              />
-              <div className="home-hero-photo-overlay absolute inset-0" aria-hidden="true" />
-              <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-white/25 bg-[#07162c]/55 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm sm:right-6 sm:top-6">
-                <span className="h-2 w-2 rounded-full bg-cyan-300" aria-hidden="true" />
-                معرفة تتحول إلى ممارسة
-              </div>
-              <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-4 sm:inset-x-6 sm:bottom-6">
-                <div className="max-w-[18rem] text-white">
-                  <p className="text-xs font-semibold text-blue-100">من مصر إلى العالم</p>
-                  <p className="mt-1 text-lg font-black leading-snug sm:text-2xl">ابدأ بخطوة. وابنِ ما بعدها.</p>
+          {visuals.heroImageUrl && (
+            <div className="home-visual relative mx-auto w-full max-w-[610px]">
+              <div className="home-visual-frame relative aspect-[4/3] overflow-hidden rounded-[1.75rem] sm:aspect-[1.2/1]">
+                <EditorialPhoto
+                  src={visuals.heroImageUrl}
+                  alt="مختصّان يعملان على الحاسوب في مساحة عمل تقنية حديثة"
+                  sizes="(max-width: 1024px) 100vw, 50vw"
+                  priority
+                  className="absolute inset-0"
+                />
+                <div className="home-hero-photo-overlay absolute inset-0" aria-hidden="true" />
+                <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-white/25 bg-[#07162c]/55 px-3 py-2 text-xs font-semibold text-white backdrop-blur-sm sm:right-6 sm:top-6">
+                  <span className="h-2 w-2 rounded-full bg-cyan-300" aria-hidden="true" />
+                  معرفة تتحول إلى ممارسة
                 </div>
-                <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white backdrop-blur-sm sm:flex">
-                  <BarChart3 className="h-5 w-5" aria-hidden="true" />
+                <div className="absolute inset-x-4 bottom-4 flex items-end justify-between gap-4 sm:inset-x-6 sm:bottom-6">
+                  <div className="max-w-[18rem] text-white">
+                    <p className="text-xs font-semibold text-blue-100">من مصر إلى العالم</p>
+                    <p className="mt-1 text-lg font-black leading-snug sm:text-2xl">ابدأ بخطوة. وابنِ ما بعدها.</p>
+                  </div>
+                  <div className="hidden h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/20 bg-white/10 text-white backdrop-blur-sm sm:flex">
+                    <BarChart3 className="h-5 w-5" aria-hidden="true" />
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
-      </section>
+      </section>}
 
-      <section className="home-impact-strip border-b border-slate-200 bg-white px-4 py-5 sm:px-6" aria-label="محاور التعلّم">
+      {(cms?.impact.enabled ?? DEFAULT_CMS.impact.enabled) && <section className="home-impact-strip border-b border-slate-200 bg-white px-4 py-5 sm:px-6" aria-label="محاور التعلّم" style={{ order: (cms?.impact ?? DEFAULT_CMS.impact).sortOrder }}>
         <div className="container mx-auto flex max-w-6xl flex-wrap items-center justify-center gap-x-8 gap-y-4 sm:justify-between">
-          {homepageContent.impact.map((item) => (
-            <div key={item.label} className="flex items-center gap-2.5 text-sm font-semibold text-slate-600">
+          {(cms?.impact ?? DEFAULT_CMS.impact).items.map((label, index) => (
+            <div key={`${label}-${index}`} className="flex items-center gap-2.5 text-sm font-semibold text-slate-600">
               <span className="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-50 text-blue-700">
-                {impactIcons[item.icon as keyof typeof impactIcons]}
+                {impactIcons[["sparkles", "laptop", "chart", "lightbulb"][index % 4] as keyof typeof impactIcons]}
               </span>
-              {item.label}
+              {label}
             </div>
           ))}
         </div>
-      </section>
+      </section>}
 
       {/* Stats Bar */}
       {stats.enabled && stats.items.length > 0 && (
-        <section className="border-y border-slate-200 bg-white py-8 px-4 sm:px-6">
+        <section className="border-y border-slate-200 bg-white py-8 px-4 sm:px-6" style={{ order: stats.sortOrder }}>
           <div className="container mx-auto max-w-6xl grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
             {stats.items.map((item, idx) => (
               <div key={idx} className="home-stat-card space-y-1 rounded-2xl border border-slate-200 bg-white/95 p-5 shadow-[0_10px_25px_rgba(15,23,42,0.04)]">
@@ -402,20 +480,20 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="home-skills-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8" id="skills">
+      {(cms?.skills.enabled ?? DEFAULT_CMS.skills.enabled) && <section className="home-skills-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8" id="skills" style={{ order: (cms?.skills ?? DEFAULT_CMS.skills).sortOrder }}>
         <div className="container mx-auto max-w-6xl">
           <div className="mb-9 flex flex-col justify-between gap-5 sm:mb-11 sm:flex-row sm:items-end">
             <div className="max-w-2xl space-y-3">
-              <p className="section-eyebrow">{homepageContent.skills.eyebrow}</p>
-              <h2 className="text-3xl font-black tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.skills.heading}</h2>
-              <p className="text-sm leading-7 text-slate-600 sm:text-base">{homepageContent.skills.description}</p>
+              <p className="section-eyebrow">{(cms?.skills ?? DEFAULT_CMS.skills).eyebrow}</p>
+              <h2 className="text-3xl font-black tracking-tight text-[#0B2D5B] sm:text-4xl">{(cms?.skills ?? DEFAULT_CMS.skills).heading}</h2>
+              <p className="text-sm leading-7 text-slate-600 sm:text-base">{(cms?.skills ?? DEFAULT_CMS.skills).description}</p>
             </div>
             <Link href="/courses" className="inline-flex shrink-0 items-center gap-2 text-sm font-bold text-blue-700 hover:text-blue-900">
               تصفّح الكورسات <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {homepageContent.skills.items.map((skill, index) => (
+            {(cms?.skills ?? DEFAULT_CMS.skills).items.map((skill, index) => (
               <Link
                 key={skill.query}
                 href={`/courses?category=${encodeURIComponent(skill.query)}`}
@@ -435,10 +513,10 @@ export default function HomePage() {
             ))}
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Featured Courses Section */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50">
+      {featuredCourses.enabled && <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-slate-50" style={{ order: featuredCourses.sortOrder }}>
         <div className="container mx-auto max-w-6xl space-y-10">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
             <div className="space-y-2">
@@ -561,26 +639,28 @@ export default function HomePage() {
             )}
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="home-data-story px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="container mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.9fr] lg:gap-16">
-          <div className="home-data-photo-wrap relative">
+      {(cms?.dataStory.enabled ?? DEFAULT_CMS.dataStory.enabled) && <section className="home-data-story px-4 py-16 sm:px-6 sm:py-20 lg:px-8" style={{ order: (cms?.dataStory ?? DEFAULT_CMS.dataStory).sortOrder }}>
+        <div className={`container mx-auto grid max-w-6xl items-center gap-10 ${visuals.dataStoryImageUrl ? "lg:grid-cols-[1fr_0.9fr] lg:gap-16" : ""}`}>
+          {visuals.dataStoryImageUrl && (
+            <div className="home-data-photo-wrap relative">
             <EditorialPhoto
-              src="/images/homepage/data-analytics.webp"
-              alt={homepageContent.dataStory.imageAlt}
+              src={visuals.dataStoryImageUrl}
+              alt={(cms?.dataStory ?? DEFAULT_CMS.dataStory).imageAlt}
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="aspect-[4/3] overflow-hidden rounded-2xl"
             />
             <div className="absolute bottom-4 right-4 rounded-lg border border-white/30 bg-slate-950/65 px-3 py-2 text-[10px] font-medium text-white backdrop-blur-sm">
-              {homepageContent.dataStory.note}
-            </div>
+                {(cms?.dataStory ?? DEFAULT_CMS.dataStory).note}
+              </div>
             <span className="home-photo-index absolute -left-3 -top-3 hidden font-mono text-sm font-semibold text-blue-700 sm:block">01 / INSIGHT</span>
-          </div>
+            </div>
+          )}
           <div className="space-y-5">
-            <p className="section-eyebrow">{homepageContent.dataStory.eyebrow}</p>
-            <h2 className="max-w-xl text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.dataStory.heading}</h2>
-            <p className="max-w-xl text-base leading-8 text-slate-600">{homepageContent.dataStory.description}</p>
+            <p className="section-eyebrow">{(cms?.dataStory ?? DEFAULT_CMS.dataStory).eyebrow}</p>
+            <h2 className="max-w-xl text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{(cms?.dataStory ?? DEFAULT_CMS.dataStory).heading}</h2>
+            <p className="max-w-xl text-base leading-8 text-slate-600">{(cms?.dataStory ?? DEFAULT_CMS.dataStory).description}</p>
             <div className="home-analysis-flow" aria-label="مراحل مبسطة لتحليل البيانات">
               <div><Database className="h-4 w-4" aria-hidden="true" /><span>بيانات</span></div>
               <span className="home-analysis-connector" aria-hidden="true" />
@@ -610,16 +690,16 @@ export default function HomePage() {
             </Link>
           </div>
         </div>
-      </section>
+      </section>}
 
-      <section className="home-practice-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="container mx-auto grid max-w-6xl items-center gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-14">
+      {(cms?.build.enabled ?? DEFAULT_CMS.build.enabled) && <section className="home-practice-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8" style={{ order: (cms?.build ?? DEFAULT_CMS.build).sortOrder }}>
+        <div className={`container mx-auto grid max-w-6xl items-center gap-8 ${visuals.buildImageUrl ? "lg:grid-cols-[0.9fr_1.1fr] lg:gap-14" : ""}`}>
           <div className="order-2 space-y-5 lg:order-1">
-            <p className="section-eyebrow">{homepageContent.build.eyebrow}</p>
-            <h2 className="max-w-xl text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.build.heading}</h2>
-            <p className="max-w-xl text-base leading-8 text-slate-600">{homepageContent.build.description}</p>
+            <p className="section-eyebrow">{(cms?.build ?? DEFAULT_CMS.build).eyebrow}</p>
+            <h2 className="max-w-xl text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{(cms?.build ?? DEFAULT_CMS.build).heading}</h2>
+            <p className="max-w-xl text-base leading-8 text-slate-600">{(cms?.build ?? DEFAULT_CMS.build).description}</p>
             <ol className="home-build-steps">
-              {homepageContent.build.steps.map((step, index) => (
+              {(cms?.build ?? DEFAULT_CMS.build).steps.map((step, index) => (
                 <li key={step}><span>0{index + 1}</span>{step}</li>
               ))}
             </ol>
@@ -627,48 +707,48 @@ export default function HomePage() {
               اختر ما تريد تعلّمه <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
-          <div className="home-practice-photo order-1 lg:order-2">
+          {visuals.buildImageUrl && <div className="home-practice-photo order-1 lg:order-2">
             <EditorialPhoto
-              src="/images/homepage/learning-team.webp"
-              alt={homepageContent.build.imageAlt}
+              src={visuals.buildImageUrl}
+              alt={(cms?.build ?? DEFAULT_CMS.build).imageAlt}
               sizes="(max-width: 1024px) 100vw, 55vw"
               className="aspect-[4/3] overflow-hidden rounded-2xl"
             />
             <div className="home-photo-caption"><BookOpen className="h-4 w-4" aria-hidden="true" /><span>من التعلّم إلى التطبيق</span></div>
-          </div>
+          </div>}
         </div>
-      </section>
+      </section>}
 
-      <section className="home-innovation-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8">
-        <div className="container mx-auto grid max-w-6xl items-center gap-10 lg:grid-cols-[1fr_0.95fr] lg:gap-16">
-          <div className="home-innovation-photo">
+      {(cms?.about.enabled ?? DEFAULT_CMS.about.enabled) && <section className="home-innovation-section px-4 py-16 sm:px-6 sm:py-20 lg:px-8" style={{ order: (cms?.about ?? DEFAULT_CMS.about).sortOrder }}>
+        <div className={`container mx-auto grid max-w-6xl items-center gap-10 ${(cms?.about.imageUrl || visuals.innovationImageUrl) ? "lg:grid-cols-[1fr_0.95fr] lg:gap-16" : ""}`}>
+          {(cms?.about.imageUrl || visuals.innovationImageUrl) && <div className="home-innovation-photo">
             <EditorialPhoto
-              src="/images/homepage/strategy-team.webp"
+              src={cms?.about.imageUrl || visuals.innovationImageUrl}
               alt={homepageContent.innovation.imageAlt}
               sizes="(max-width: 1024px) 100vw, 50vw"
               className="aspect-[16/10] overflow-hidden rounded-2xl"
             />
-          </div>
+          </div>}
           <div className="home-innovation-copy space-y-5">
-            <p className="section-eyebrow">{homepageContent.innovation.eyebrow}</p>
-            <h2 className="max-w-lg text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{homepageContent.innovation.heading}</h2>
-            <p className="max-w-xl text-base leading-8 text-slate-600">{homepageContent.innovation.description}</p>
+            <p className="section-eyebrow">{locale === "ar" ? "تفكير يفتح آفاقًا" : "Ideas that open new horizons"}</p>
+            <h2 className="max-w-lg text-3xl font-black leading-tight tracking-tight text-[#0B2D5B] sm:text-4xl">{(cms?.about ?? DEFAULT_CMS.about).heading}</h2>
+            <p className="max-w-xl text-base leading-8 text-slate-600">{(cms?.about ?? DEFAULT_CMS.about).description}</p>
             <Link href="/about" className="inline-flex items-center gap-2 pt-2 text-sm font-bold text-blue-700 hover:text-blue-900">
               تعرّف على رؤيتنا <ArrowLeft className="h-4 w-4" aria-hidden="true" />
             </Link>
           </div>
         </div>
-      </section>
+      </section>}
 
       {/* Why Learn With KEMIX Academy */}
-      <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200">
+      {features.enabled && <section className="py-16 sm:py-24 px-4 sm:px-6 lg:px-8 bg-white border-t border-slate-200" style={{ order: features.sortOrder }}>
         <div className="container mx-auto max-w-6xl space-y-12">
           <div className="text-center space-y-3 max-w-2xl mx-auto">
             <Badge variant="secondary" className="text-blue-700 bg-blue-50 border-blue-200 font-bold">
-              {features.heading || "منهجية التعلّم"}
+              {locale === "ar" ? "منهجية التعلّم" : "Learning approach"}
             </Badge>
             <h2 className="text-3xl font-black tracking-tight text-slate-900">
-              تعلّم بهدف. تقدّم بثقة.
+              {features.heading}
             </h2>
             {features.description && (
               <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
@@ -677,9 +757,8 @@ export default function HomePage() {
             )}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {features.items.length > 0 ? (
-              features.items.map((feat, idx) => (
+          {features.items.length > 0 && <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {features.items.map((feat, idx) => (
                 <Card key={idx} className="home-feature-card border-slate-200 hover:border-blue-300 transition-all shadow-sm rounded-2xl">
                   <CardHeader className="space-y-3">
                     <div className="p-3 rounded-xl bg-blue-50 w-fit">
@@ -695,32 +774,13 @@ export default function HomePage() {
                     </CardDescription>
                   </CardContent>
                 </Card>
-              ))
-            ) : (
-              featuresDefault.map((feat, idx) => (
-                <Card key={idx} className="home-feature-card border-slate-200 hover:border-blue-300 transition-all shadow-sm rounded-2xl">
-                  <CardHeader className="space-y-3">
-                    <div className="p-3 rounded-xl bg-blue-50 w-fit">
-                      {feat.icon}
-                    </div>
-                    <CardTitle className="text-base font-bold text-slate-900">
-                      {feat.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="text-slate-600 text-xs leading-relaxed">
-                      {feat.description}
-                    </CardDescription>
-                  </CardContent>
-                </Card>
-              ))
-            )}
-          </div>
+              ))}
+          </div>}
         </div>
-      </section>
+      </section>}
 
       {testimonials.enabled && testimonials.items.length > 0 && (
-        <section className="py-16 px-4 sm:px-6 lg:px-8">
+        <section className="py-16 px-4 sm:px-6 lg:px-8" style={{ order: testimonials.sortOrder }}>
           <div className="container mx-auto max-w-6xl space-y-10">
             <div className="max-w-2xl space-y-3">
               <Badge variant="cyan" className="font-bold">من مجتمع كيميكس</Badge>
@@ -744,7 +804,7 @@ export default function HomePage() {
 
       {/* CTA Bottom Banner */}
       {cta.enabled && (
-        <section className="home-cta-card bg-gradient-to-l from-[#0B2D5B] via-[#1D4ED8] to-[#0284C7] text-white py-16 px-4 sm:px-6">
+        <section className="home-cta-card bg-gradient-to-l from-[#0B2D5B] via-[#1D4ED8] to-[#0284C7] text-white py-16 px-4 sm:px-6" style={{ order: cta.sortOrder }}>
           <div className="container mx-auto max-w-4xl text-center space-y-6">
             <h2 className="text-3xl sm:text-4xl font-black tracking-tight text-white">
               {cta.heading}

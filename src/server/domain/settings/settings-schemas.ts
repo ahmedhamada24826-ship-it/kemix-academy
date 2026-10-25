@@ -17,7 +17,19 @@ const CmsTestimonialItemSchema = z.object({
   badge: z.string().max(120),
 });
 
+const CmsSkillItemSchema = z.object({
+  title: z.string().max(120),
+  englishTitle: z.string().max(120),
+  description: z.string().max(600),
+  query: z.string().max(120),
+  icon: z.enum(["chart", "code", "database", "dashboard"]),
+});
+
 export const HomepageCmsSchema = z.object({
+  preferences: z.object({
+    theme: z.enum(["light", "dark"]),
+    locale: z.enum(["ar", "en"]),
+  }),
   hero: z.object({
     enabled: z.boolean(),
     sortOrder: z.number().int(),
@@ -36,11 +48,42 @@ export const HomepageCmsSchema = z.object({
     sortOrder: z.number().int(),
     items: z.array(CmsStatItemSchema).max(8),
   }),
+  impact: z.object({
+    enabled: z.boolean(),
+    sortOrder: z.number().int(),
+    items: z.array(z.string().max(120)).max(8),
+  }),
+  skills: z.object({
+    enabled: z.boolean(),
+    sortOrder: z.number().int(),
+    eyebrow: z.string().max(200),
+    heading: z.string().max(200),
+    description: z.string().max(600),
+    items: z.array(CmsSkillItemSchema).max(8),
+  }),
   featuredCourses: z.object({
     enabled: z.boolean(),
     sortOrder: z.number().int(),
     heading: z.string().max(200),
     description: z.string().max(600),
+  }),
+  dataStory: z.object({
+    enabled: z.boolean(),
+    sortOrder: z.number().int(),
+    eyebrow: z.string().max(200),
+    heading: z.string().max(200),
+    description: z.string().max(1000),
+    imageAlt: z.string().max(300),
+    note: z.string().max(300),
+  }),
+  build: z.object({
+    enabled: z.boolean(),
+    sortOrder: z.number().int(),
+    eyebrow: z.string().max(200),
+    heading: z.string().max(200),
+    description: z.string().max(1000),
+    imageAlt: z.string().max(300),
+    steps: z.array(z.string().max(120)).max(8),
   }),
   about: z.object({
     enabled: z.boolean(),
@@ -78,6 +121,12 @@ export const HomepageCmsSchema = z.object({
   footer: z.object({
     enabled: z.boolean(),
     sortOrder: z.number().int(),
+  }),
+  visuals: z.object({
+    heroImageUrl: z.string().max(2000),
+    dataStoryImageUrl: z.string().max(2000),
+    buildImageUrl: z.string().max(2000),
+    innovationImageUrl: z.string().max(2000),
   }),
 });
 

@@ -3,16 +3,22 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { siteConfig } from "@/config/site";
 import { Database, Award, ShieldCheck } from "lucide-react";
+import { platformSettingsService } from "@/server/application/settings/settings.service";
+import { headers } from "next/headers";
 
-export function Footer() {
+export async function Footer() {
+  await headers();
+  const settings = await platformSettingsService.getSettings();
+  if (!settings.cms.footer.enabled) return null;
+
   return (
     <footer className="border-t border-blue-900/40 bg-[radial-gradient(ellipse_at_top_right,rgba(37,99,235,0.16),transparent_42%),linear-gradient(180deg,#0B2444_0%,#07162C_38%,#07162C_100%)] text-slate-300">
       <div className="container mx-auto max-w-7xl px-5 py-12 sm:px-6 lg:py-16">
         <div className="grid grid-cols-1 gap-9 md:grid-cols-4 lg:gap-12">
           <div className="space-y-4 md:col-span-1">
-            <Logo variant="dark" size="lg" showTagline={true} />
+            <Logo variant="dark" size="lg" showTagline={true} imageUrl={settings.footerLogoUrl} />
             <p className="pt-2 text-[15px] leading-7 text-slate-300">
-              KEMIX Academy منصة تعليمية تهدف إلى تمكين المتعلمين بالمهارات الرقمية والتحليلية التي تساعدهم على بناء مستقبل أكثر طموحًا.
+              {settings.footerText || "KEMIX Academy منصة تعليمية تهدف إلى تمكين المتعلمين بالمهارات الرقمية والتحليلية التي تساعدهم على بناء مستقبل أكثر طموحًا."}
             </p>
             <div className="flex items-center gap-3 pt-2 text-slate-400">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-blue-800/60 bg-blue-950/60 px-3 py-1.5 text-sm font-medium text-blue-300">
