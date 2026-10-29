@@ -1196,6 +1196,24 @@ export default function AdminCourseDetailPage({
                   />
                 </div>
 
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700" htmlFor="courseDurationHours">
+                    مدة الكورس بالساعات
+                  </label>
+                  <Input
+                    id="courseDurationHours"
+                    type="number"
+                    min={0}
+                    step={0.25}
+                    placeholder="مثال: 56"
+                    value={durationHours}
+                    onChange={(e) => setDurationHours(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                  <p className="text-[11px] text-slate-500">
+                    المدة الإجمالية التقديرية للكورس، ويمكن استخدام أجزاء الساعة.
+                  </p>
+                </div>
+
                 <div className="space-y-3 rounded-md border border-slate-200 p-3">
                   <h3 className="text-xs font-bold text-slate-800">مدربو الدورة</h3>
                   <details className="relative">
@@ -1301,24 +1319,6 @@ export default function AdminCourseDetailPage({
                   <label htmlFor="isFreeDetail" className="text-xs font-semibold text-slate-700 cursor-pointer">
                     كورس مجاني بالكامل
                   </label>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-700" htmlFor="courseDurationHours">
-                    مدة الكورس بالساعات
-                  </label>
-                  <Input
-                    id="courseDurationHours"
-                    type="number"
-                    min={0}
-                    step={0.25}
-                    placeholder="مثال: 56"
-                    value={durationHours}
-                    onChange={(e) => setDurationHours(Math.max(0, Number(e.target.value) || 0))}
-                  />
-                  <p className="text-[11px] text-slate-500">
-                    أدخل المدة الإجمالية التقديرية للكورس، ويمكن استخدام أجزاء الساعة.
-                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3">
