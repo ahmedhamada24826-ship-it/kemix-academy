@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "translation:server": "python scripts/translation_server.py",
     "seed": "tsx prisma/seed.ts",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
@@ -21,6 +22,7 @@
   "dependencies": {
     "@aws-sdk/client-s3": "^3.758.0",
     "@aws-sdk/s3-request-presigner": "^3.758.0",
+    "@fontsource-variable/cairo": "^5.2.6",
     "@node-rs/argon2": "^2.0.2",
     "@prisma/client": "^6.4.1",
     "@types/qrcode": "^1.5.6",

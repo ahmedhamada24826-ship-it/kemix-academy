@@ -118,6 +118,7 @@ export function Logo({
   const isDarkBg = variant === "dark";
   const isMonochrome = variant === "monochrome";
   const isAppIcon = variant === "app-icon";
+  const isDefaultMark = !imageUrl;
 
   const iconSizes = {
     sm: "h-6 w-6",
@@ -150,14 +151,16 @@ export function Logo({
         className={cn(
           "brand-logo-image-frame",
           `brand-logo-image-frame-${size}`,
+          isDefaultMark && "brand-logo-mark-frame",
+          isDefaultMark && `brand-logo-mark-frame-${size}`,
           isDarkBg && "brand-logo-image-frame-dark",
           className
         )}
       >
         <img
-          src={imageUrl || "/kemix-academy-logo.png"}
-          alt="KEMIX Academy — Learn → Build → Grow"
-          className="brand-logo-image"
+          src={imageUrl || "/kemix-glossy-mark.png"}
+          alt={isDefaultMark ? "KEMIX Academy" : "KEMIX Academy — Learn → Build → Grow"}
+          className={cn("brand-logo-image", isDefaultMark && "brand-logo-mark-image")}
         />
       </span>
     );

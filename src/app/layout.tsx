@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
+import "@fontsource-variable/cairo";
 import "./globals.css";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
+import { SiteIntro } from "@/components/brand/site-intro";
+import { AutoTranslate } from "@/components/providers/auto-translate";
 import { AuthProvider } from "@/components/providers/auth-provider";
 import { ThemeProvider } from "@/components/providers/theme-provider";
 import { LanguageProvider } from "@/components/providers/language-provider";
@@ -28,10 +31,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ar" dir="rtl" className="h-full">
-      <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased font-sans transition-colors duration-200">
+      <body className="min-h-screen flex flex-col bg-slate-50 text-slate-900 antialiased transition-colors duration-200">
         <LanguageProvider>
           <ThemeProvider>
             <AuthProvider>
+              <SiteIntro />
+              <AutoTranslate />
               <Header />
               <main className="flex-1 flex flex-col">{children}</main>
               <Footer />
