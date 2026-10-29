@@ -51,6 +51,7 @@ export default function AdminCoursesPage() {
   const [newDesc, setNewDesc] = useState("");
   const [newLevel, setNewLevel] = useState<"BEGINNER" | "INTERMEDIATE" | "ADVANCED" | "ALL_LEVELS">("BEGINNER");
   const [newPrice, setNewPrice] = useState<number>(0);
+  const [newDurationHours, setNewDurationHours] = useState<number>(0);
   const [newCurrency, setNewCurrency] = useState("EGP");
   const [newIsFree, setNewIsFree] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
@@ -97,6 +98,7 @@ export default function AdminCoursesPage() {
           description: newDesc.trim(),
           level: newLevel,
           price: newIsFree ? 0 : Number(newPrice) || 0,
+          durationSeconds: Math.round(newDurationHours * 3600),
           currency: newCurrency,
           isFree: newIsFree,
         }),
@@ -114,6 +116,7 @@ export default function AdminCoursesPage() {
       setNewShortDesc("");
       setNewDesc("");
       setNewPrice(0);
+      setNewDurationHours(0);
       setNewIsFree(false);
       await loadCourses();
     } catch (err) {
@@ -161,6 +164,13 @@ export default function AdminCoursesPage() {
       c.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       c.slug.toLowerCase().includes(searchQuery.toLowerCase())
   );
+  const formatDuration = (seconds: number) => {
+    if (seconds <= 0) return "غير محددة";
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    if (hours > 0) return `${hours} ساعة${minutes > 0 ? ` و${minutes} دقيقة` : ""}`;
+    return `${minutes} دقيقة`;
+  };
 
   return (
     <div className="space-y-6" dir="rtl">
@@ -205,6 +215,7 @@ export default function AdminCoursesPage() {
               <tr>
                 <th className="p-4">الكورس والرابط</th>
                 <th className="p-4">المستوى</th>
+                <th className="p-4">المدة</th>
                 <th className="p-4">السعر</th>
                 <th className="p-4">الحالة</th>
                 <th className="p-4">المدرب</th>
@@ -214,13 +225,13 @@ export default function AdminCoursesPage() {
             <tbody className="divide-y divide-slate-100">
               {isLoading ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-500 animate-pulse font-medium">
+                  <td colSpan={7} className="p-8 text-center text-slate-500 animate-pulse font-medium">
                     جاري تحميل الكورسات...
                   </td>
                 </tr>
               ) : filteredCourses.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="p-8 text-center text-slate-500">
+                  <td colSpan={7} className="p-8 text-center text-slate-500">
                     لا توجد كورسات مطابقة. اضغط على &ldquo;إضافة كورس جديد&rdquo; للبدء.
                   </td>
                 </tr>
@@ -241,6 +252,9 @@ export default function AdminCoursesPage() {
                           ? "متقدم"
                           : "جميع المستويات"}
                       </Badge>
+                    </td>
+                    <td className="p-4 whitespace-nowrap text-slate-600">
+                      {formatDuration(course.durationSeconds)}
                     </td>
                     <td className="p-4 font-bold text-slate-800">
                       {course.isFree || !course.price ? (
@@ -422,6 +436,22 @@ export default function AdminCoursesPage() {
                 كورس مجاني بالكامل
               </label>
             </div>
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700" htmlFor="newCourseDurationHours">
+              مدة الكورس بالساعات
+            </label>
+            <Input
+              id="newCourseDurationHours"
+              type="number"
+              min={0}
+              step={0.25}
+              placeholder="مثال: 56"
+              value={newDurationHours}
+              onChange={(e) => setNewDurationHours(Math.max(0, Number(e.target.value) || 0))}
+            />
+            <p className="text-[11px] text-slate-500">أدخل المدة الإجمالية التقديرية للكورس.</p>
           </div>
 
           <div className="space-y-1">

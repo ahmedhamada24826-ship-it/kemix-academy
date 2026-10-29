@@ -137,6 +137,7 @@ export default function AdminCourseDetailPage({
   const [coverUploadError, setCoverUploadError] = useState<string | null>(null);
   const [coverTouched, setCoverTouched] = useState(false);
   const [price, setPrice] = useState<number>(0);
+  const [durationHours, setDurationHours] = useState<number>(0);
   const [currency, setCurrency] = useState("EGP");
   const [isFree, setIsFree] = useState(false);
   const [certificatesEnabled, setCertificatesEnabled] = useState(false);
@@ -490,6 +491,7 @@ export default function AdminCourseDetailPage({
         setLevel(c.level);
         setCoverUrl(c.coverImageUrl || "");
         setPrice(c.price || 0);
+        setDurationHours((c.durationSeconds || 0) / 3600);
         setCurrency(c.currency || "EGP");
         setIsFree(c.isFree || false);
         setCertificatesEnabled(c.certificatesEnabled || false);
@@ -553,6 +555,7 @@ export default function AdminCourseDetailPage({
           level,
           coverImageUrl: coverTouched ? (coverUrl || null) : undefined,
           price: isFree ? 0 : Number(price) || 0,
+          durationSeconds: Math.round(durationHours * 3600),
           currency,
           isFree,
           certificatesEnabled,
@@ -1298,6 +1301,24 @@ export default function AdminCourseDetailPage({
                   <label htmlFor="isFreeDetail" className="text-xs font-semibold text-slate-700 cursor-pointer">
                     كورس مجاني بالكامل
                   </label>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700" htmlFor="courseDurationHours">
+                    مدة الكورس بالساعات
+                  </label>
+                  <Input
+                    id="courseDurationHours"
+                    type="number"
+                    min={0}
+                    step={0.25}
+                    placeholder="مثال: 56"
+                    value={durationHours}
+                    onChange={(e) => setDurationHours(Math.max(0, Number(e.target.value) || 0))}
+                  />
+                  <p className="text-[11px] text-slate-500">
+                    أدخل المدة الإجمالية التقديرية للكورس، ويمكن استخدام أجزاء الساعة.
+                  </p>
                 </div>
 
                 <div className="flex items-center gap-2 rounded-md border border-emerald-200 bg-emerald-50 p-3">
