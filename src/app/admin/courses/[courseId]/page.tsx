@@ -34,6 +34,7 @@ interface Lesson {
   sectionId: string;
   title: string;
   slug: string;
+  sortOrder: number;
   lessonType: "VIDEO" | "TEXT" | "FILE" | "QUIZ";
   videoSource?: "UPLOAD" | "YOUTUBE" | "GOOGLE_DRIVE" | "ONEDRIVE" | "SHAREPOINT";
   videoUrl?: string | null;
@@ -152,8 +153,10 @@ export default function AdminCourseDetailPage({
 
   // Add section modal
   const [sectionModalOpen, setSectionModalOpen] = useState(false);
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null);
   const [sectionTitle, setSectionTitle] = useState("");
   const [sectionDesc, setSectionDesc] = useState("");
+  const [sectionSortOrder, setSectionSortOrder] = useState(0);
   const [isAddingSection, setIsAddingSection] = useState(false);
 
   // Add lesson modal
@@ -161,6 +164,7 @@ export default function AdminCourseDetailPage({
   const [targetSectionId, setTargetSectionId] = useState<string | null>(null);
   const [lessonTitle, setLessonTitle] = useState("");
   const [lessonSlug, setLessonSlug] = useState("");
+  const [lessonSortOrder, setLessonSortOrder] = useState(0);
   const [lessonType, setLessonType] = useState<"VIDEO" | "TEXT">("VIDEO");
   const [videoSource, setVideoSource] = useState<"YOUTUBE" | "GOOGLE_DRIVE" | "ONEDRIVE" | "SHAREPOINT" | "UPLOAD">("YOUTUBE");
   const [videoUrl, setVideoUrl] = useState("");
@@ -209,6 +213,7 @@ export default function AdminCourseDetailPage({
     setEditingLesson(selectedLesson);
     setLessonTitle(selectedLesson.title);
     setLessonSlug(selectedLesson.slug);
+    setLessonSortOrder(selectedLesson.sortOrder ?? lesson.sortOrder);
     setLessonType(selectedLesson.lessonType === "TEXT" ? "TEXT" : "VIDEO");
     setVideoSource(selectedLesson.videoSource || "UPLOAD");
     setVideoUrl(selectedLesson.videoUrl || "");
@@ -234,6 +239,7 @@ export default function AdminCourseDetailPage({
         body: JSON.stringify({
           title: lessonTitle.trim(),
           slug: lessonSlug.trim() || undefined,
+          sortOrder: Number(lessonSortOrder),
           lessonType,
           videoSource: lessonType === "VIDEO" ? videoSource : undefined,
           videoUrl: lessonType === "VIDEO" && videoUrl.trim() ? videoUrl.trim() : null,
@@ -595,27 +601,40 @@ export default function AdminCourseDetailPage({
 
     setIsAddingSection(true);
     try {
-      const res = await fetch(`/api/courses/${courseId}/sections`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          title: sectionTitle.trim(),
-          description: sectionDesc.trim() || undefined,
-          sortOrder: sections.length + 1,
-        }),
-      });
+      const isEditing = editingSectionId !== null;
+      const res = await fetch(
+        isEditing ? `/api/sections/${editingSectionId}` : `/api/courses/${courseId}/sections`,
+        {
+          method: isEditing ? "PATCH" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            title: sectionTitle.trim(),
+            description: sectionDesc.trim(),
+            sortOrder: Number(sectionSortOrder),
+          }),
+        }
+      );
 
-      if (res.ok) {
-        setSectionModalOpen(false);
-        setSectionTitle("");
-        setSectionDesc("");
-        await refreshData();
-      }
+      if (!res.ok) throw new Error((await res.json()).error?.message || "فشل حفظ الأسبوع");
+      setSectionModalOpen(false);
+      setEditingSectionId(null);
+      setSectionTitle("");
+      setSectionDesc("");
+      await refreshData();
     } catch (err) {
-      console.error("Failed to add section:", err);
+      console.error("Failed to save section:", err);
+      alert(err instanceof Error ? err.message : "فشل حفظ الأسبوع");
     } finally {
       setIsAddingSection(false);
     }
+  };
+
+  const openSectionEditor = (section: Section) => {
+    setEditingSectionId(section.id);
+    setSectionTitle(section.title);
+    setSectionDesc(section.description || "");
+    setSectionSortOrder(section.sortOrder);
+    setSectionModalOpen(true);
   };
 
   const handleAddLesson = async (e: React.FormEvent) => {
@@ -654,7 +673,7 @@ export default function AdminCourseDetailPage({
       durationSeconds: Number(lessonDuration) || 600,
       isFreePreview,
       content: lessonContent.trim() || undefined,
-      sortOrder: 10,
+      sortOrder: Number(lessonSortOrder),
     };
 
     const res = await fetch(
@@ -874,11 +893,17 @@ export default function AdminCourseDetailPage({
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold text-slate-900 flex items-center gap-2">
               <Layers className="h-5 w-5 text-blue-600" />
-              <span>الوحدات التدريبية والدروس</span>
+              <span>الأسابيع التدريبية والدروس</span>
             </h2>
             <Button
               size="sm"
-              onClick={() => setSectionModalOpen(true)}
+              onClick={() => {
+                setEditingSectionId(null);
+                setSectionTitle("");
+                setSectionDesc("");
+                setSectionSortOrder(Math.max(-1, ...sections.map((section) => section.sortOrder)) + 1);
+                setSectionModalOpen(true);
+              }}
               className="bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold h-8 flex items-center gap-1.5 shadow-sm"
             >
               <PlusCircle className="h-3.5 w-3.5" />
@@ -889,7 +914,17 @@ export default function AdminCourseDetailPage({
           {sections.length === 0 ? (
             <Card className="p-8 text-center bg-white border-slate-200 space-y-3 shadow-sm">
               <p className="text-sm text-slate-500">لم يتم إضافة وحدات لهذا المنهج بعد.</p>
-              <Button size="sm" variant="outline" onClick={() => setSectionModalOpen(true)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setEditingSectionId(null);
+                  setSectionTitle("");
+                  setSectionDesc("");
+                  setSectionSortOrder(0);
+                  setSectionModalOpen(true);
+                }}
+              >
                 إنشاء أول وحدة
               </Button>
             </Card>
@@ -900,34 +935,48 @@ export default function AdminCourseDetailPage({
                   <div className="bg-slate-50 p-4 border-b border-slate-200 flex items-center justify-between">
                     <div>
                       <h3 className="text-sm font-bold text-slate-900">
-                        الوحدة {sIdx + 1}: {section.title}
+                        الأسبوع {sIdx + 1}: {section.title}
                       </h3>
                       {section.description && (
                         <p className="text-xs text-slate-500 mt-0.5">{section.description}</p>
                       )}
                     </div>
 
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => {
-                        setTargetSectionId(section.id);
-                        setLessonTitle("");
-                        setLessonSlug("");
-                        setLessonContent("");
-                        setVideoUrl("");
-                        setLessonType("VIDEO");
-                        setVideoSource("YOUTUBE");
-                        setUnlockRule("PREVIOUS_LESSON");
-                        setLessonDuration(600);
-                        setIsFreePreview(false);
-                        setLessonModalOpen(true);
-                      }}
-                      className="h-7 text-xs flex items-center gap-1 bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
-                    >
-                      <PlusCircle className="h-3 w-3 ml-1" />
-                      <span>إضافة درس</span>
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => openSectionEditor(section)}
+                        className="h-7 text-xs flex items-center gap-1 bg-white"
+                      >
+                        <Edit className="h-3 w-3" />
+                        تعديل الأسبوع
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          setTargetSectionId(section.id);
+                          setLessonTitle("");
+                          setLessonSlug("");
+                          setLessonContent("");
+                          setLessonSortOrder(
+                            Math.max(-1, ...section.lessons.map((lesson) => lesson.sortOrder)) + 1
+                          );
+                          setVideoUrl("");
+                          setLessonType("VIDEO");
+                          setVideoSource("YOUTUBE");
+                          setUnlockRule("PREVIOUS_LESSON");
+                          setLessonDuration(600);
+                          setIsFreePreview(false);
+                          setLessonModalOpen(true);
+                        }}
+                        className="h-7 text-xs flex items-center gap-1 bg-white border-blue-200 text-blue-700 hover:bg-blue-50"
+                      >
+                        <PlusCircle className="h-3 w-3 ml-1" />
+                        <span>إضافة درس</span>
+                      </Button>
+                    </div>
                   </div>
 
                   <div className="divide-y divide-slate-100">
@@ -1388,7 +1437,7 @@ export default function AdminCourseDetailPage({
       {/* Add Section Dialog */}
       <Dialog open={sectionModalOpen} onOpenChange={setSectionModalOpen}>
         <DialogHeader>
-          <DialogTitle>إضافة وحدة تعليمية جديدة</DialogTitle>
+          <DialogTitle>{editingSectionId ? "تعديل الأسبوع" : "إضافة وحدة تعليمية جديدة"}</DialogTitle>
           <DialogDescription>
             أنشئ قسماً أو فصلاً جديداً لتنظيم الدروس والواجبات المرتبطة به.
           </DialogDescription>
@@ -1401,6 +1450,17 @@ export default function AdminCourseDetailPage({
               placeholder="مثال: الوحدة الأولى: مقدمة في لغة بايثون وتحليل البيانات"
               value={sectionTitle}
               onChange={(e) => setSectionTitle(e.target.value)}
+              required
+            />
+          </div>
+
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700">ترتيب الأسبوع</label>
+            <Input
+              type="number"
+              min={0}
+              value={sectionSortOrder}
+              onChange={(e) => setSectionSortOrder(Number(e.target.value))}
               required
             />
           </div>
@@ -1419,7 +1479,10 @@ export default function AdminCourseDetailPage({
             <Button
               type="button"
               variant="outline"
-              onClick={() => setSectionModalOpen(false)}
+              onClick={() => {
+                setSectionModalOpen(false);
+                setEditingSectionId(null);
+              }}
             >
               إلغاء
             </Button>
@@ -1428,7 +1491,7 @@ export default function AdminCourseDetailPage({
               disabled={isAddingSection}
               className="bg-[#2563EB] hover:bg-blue-700 text-white font-bold"
             >
-              {isAddingSection ? "جاري الإضافة..." : "إضافة الوحدة"}
+              {isAddingSection ? "جاري الحفظ..." : editingSectionId ? "حفظ التعديلات" : "إضافة الوحدة"}
             </Button>
           </DialogFooter>
         </form>
@@ -1465,6 +1528,16 @@ export default function AdminCourseDetailPage({
           </div>
 
           <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-slate-700">ترتيب المحاضرة</label>
+              <Input
+                type="number"
+                min={0}
+                value={lessonSortOrder}
+                onChange={(e) => setLessonSortOrder(Number(e.target.value))}
+                required
+              />
+            </div>
             <div className="space-y-1">
               <label className="text-xs font-bold text-slate-700">نوع الدرس</label>
               <select
@@ -1586,6 +1659,16 @@ export default function AdminCourseDetailPage({
         <form onSubmit={handleSaveLesson} className="space-y-4 py-2 text-right">
           {lessonUploadError && <Alert variant="destructive"><AlertDescription>{lessonUploadError}</AlertDescription></Alert>}
           <Input value={lessonTitle} onChange={(e) => setLessonTitle(e.target.value)} placeholder="عنوان الدرس" required />
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-slate-700">ترتيب المحاضرة</label>
+            <Input
+              type="number"
+              min={0}
+              value={lessonSortOrder}
+              onChange={(e) => setLessonSortOrder(Number(e.target.value))}
+              required
+            />
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <select value={lessonType} onChange={(e) => setLessonType(e.target.value as "VIDEO" | "TEXT")} className="flex h-10 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-xs">
               <option value="VIDEO">فيديو</option>

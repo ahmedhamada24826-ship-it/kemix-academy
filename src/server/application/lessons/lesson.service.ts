@@ -287,7 +287,7 @@ export class LessonService implements ILessonService {
         sectionId,
         ...(canManage ? {} : { isPublished: true }),
       },
-      orderBy: { sortOrder: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
 
     return lessons;
@@ -326,7 +326,7 @@ export class LessonService implements ILessonService {
 
     return this.prisma.lesson.findMany({
       where: { sectionId },
-      orderBy: { sortOrder: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
   }
 }

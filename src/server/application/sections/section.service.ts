@@ -135,11 +135,11 @@ export class SectionService implements ISectionService {
 
     const sections = await this.prisma.courseSection.findMany({
       where: { courseId },
-      orderBy: { sortOrder: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
       include: {
         lessons: {
           where: canManage ? {} : { isPublished: true },
-          orderBy: { sortOrder: "asc" },
+          orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
         },
       },
     });
@@ -177,7 +177,7 @@ export class SectionService implements ISectionService {
 
     return this.prisma.courseSection.findMany({
       where: { courseId },
-      orderBy: { sortOrder: "asc" },
+      orderBy: [{ sortOrder: "asc" }, { createdAt: "asc" }],
     });
   }
 }
