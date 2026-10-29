@@ -1842,30 +1842,6 @@ a {
   animation: intro-screen-enter 450ms ease-out both;
 }
 
-.translation-error {
-  position: fixed;
-  z-index: 90;
-  top: 4.5rem;
-  left: 50%;
-  max-width: min(90vw, 36rem);
-  transform: translateX(-50%);
-  border: 1px solid rgb(239 68 68 / 24%);
-  border-radius: 0.75rem;
-  background: #fff7ed;
-  padding: 0.75rem 1rem;
-  color: #9a3412;
-  font-size: 0.85rem;
-  font-weight: 700;
-  text-align: center;
-  box-shadow: 0 8px 24px rgb(15 23 42 / 12%);
-}
-
-.dark .translation-error {
-  border-color: rgb(248 113 113 / 30%);
-  background: #3a1c24;
-  color: #fecaca;
-}
-
 .site-intro::before,
 .site-intro::after {
   position: absolute;

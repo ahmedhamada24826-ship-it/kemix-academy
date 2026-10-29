@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLanguage, type Locale } from "@/components/providers/language-provider";
 
 type TranslationRecord = {
@@ -54,10 +54,8 @@ export function AutoTranslate() {
   const { locale } = useLanguage();
   const textRecords = useRef(new WeakMap<Text, TranslationRecord>());
   const attributeRecords = useRef(new WeakMap<Element, Map<string, TranslationRecord>>());
-  const [translationError, setTranslationError] = useState(false);
 
   useEffect(() => {
-    setTranslationError(false);
     let active = true;
     let scanTimer: number | undefined;
     let drainingQueue = false;
@@ -165,7 +163,6 @@ export function AutoTranslate() {
         if (!controller.signal.aborted) {
           translationFailed = true;
           console.error("Page translation failed.", error);
-          setTranslationError(true);
           for (const queue of Object.values(queues)) {
             queue.forEach((task) => {
               task.record.pendingLocale = undefined;
@@ -258,13 +255,5 @@ export function AutoTranslate() {
     };
   }, [locale]);
 
-  if (!translationError) return null;
-
-  return (
-    <div className="translation-error" role="alert" translate="no">
-      {locale === "ar"
-        ? "تعذرت الترجمة المحلية. تأكد من تشغيل محرك الترجمة على المنفذ 5000."
-        : "Local translation is unavailable. Make sure the translation engine is running on port 5000."}
-    </div>
-  );
+  return null;
 }
